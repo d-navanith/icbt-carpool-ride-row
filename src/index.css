@@ -1,0 +1,214 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #0b0f19;
+    color: #f8fafc;
+    overflow-x: hidden;
+  }
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* ── Custom Sleek Scrollbar ── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* ── Glassmorphism Core Design Tokens ── */
+.glass-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.35);
+  border-radius: 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 14px 40px 0 rgba(0, 0, 0, 0.45);
+}
+
+.glass-panel {
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input {
+  width: 100%;
+  padding: 0.6875rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.875rem;
+  font-size: 0.875rem;
+  color: #ffffff;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.glass-input:focus {
+  border-color: #3b82f6;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.glass-input::placeholder {
+  color: #64748b;
+}
+
+/* ── Primary Glass Button ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+  transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.625rem 1.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  backdrop-filter: blur(8px);
+}
+
+.badge-green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-slate {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* ── Animations ── */
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-in {
+  animation: pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Leaflet Dark Container Styling ── */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 1rem;
+  z-index: 10;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #0f172a !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  color: #f8fafc !important;
+  font-family: 'Inter', sans-serif;
+}
+.leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.92) !important;
+}
