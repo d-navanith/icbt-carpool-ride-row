@@ -1,0 +1,251 @@
+{
+  "info": {
+    "name": "ICBT UniRide - Campus Carpool API",
+    "_postman_id": "8f3b2a19-90b1-4c3e-8e4d-7a5d1a098765",
+    "description": "Complete Postman collection for the ICBT Campus Carpool REST & WebSocket API. Includes pre-configured environment variables and test scripts for token handling.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "authToken", "value": "" },
+    { "key": "driverToken", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "2. Authentication",
+      "item": [
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('adminToken', jsonData.token);",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@icbt.edu.lk\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login as Verified Driver",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('driverToken', jsonData.token);",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kamal.driver@icbt.edu.lk\",\n  \"password\": \"driver123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login as Passenger",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nimal.student@icbt.edu.lk\",\n  \"password\": \"student123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nimal Silva\",\n  \"phone\": \"+94 77 999 8888\",\n  \"student_staff_id\": \"ICBT-ST-2024-42\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/profile", "host": ["{{baseUrl}}"], "path": ["api", "auth", "profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Rides & Carpools",
+      "item": [
+        {
+          "name": "Search Available Rides",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/rides?origin=Gampaha&destination=Campus",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides"],
+              "query": [
+                { "key": "origin", "value": "Gampaha" },
+                { "key": "destination", "value": "Campus" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Publish Carpool (Driver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{driverToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": \"Gampaha Town\",\n  \"destination\": \"ICBT Colombo Campus\",\n  \"route_waypoints\": [\"Miriswatta\", \"Kiribathgoda\", \"Kelaniya\"],\n  \"departure_date\": \"2026-08-18\",\n  \"departure_time\": \"07:30\",\n  \"total_seats\": 4,\n  \"price_per_seat\": 350,\n  \"notes\": \"Daily campus commute along Kandy Road.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/rides", "host": ["{{baseUrl}}"], "path": ["api", "rides"] }
+          }
+        },
+        {
+          "name": "Trigger Emergency SOS",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"Kiribathgoda Junction\",\n  \"message\": \"Urgent assist requested by commuter.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/rides/1/sos", "host": ["{{baseUrl}}"], "path": ["api", "rides", "1", "sos"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Bookings",
+      "item": [
+        {
+          "name": "Book Carpool Seat",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ride_id\": 1,\n  \"seats_booked\": 1,\n  \"pickup_location\": \"Kiribathgoda Junction\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/bookings", "host": ["{{baseUrl}}"], "path": ["api", "bookings"] }
+          }
+        },
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/bookings/my-bookings", "host": ["{{baseUrl}}"], "path": ["api", "bookings", "my-bookings"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Admin Security Console",
+      "item": [
+        {
+          "name": "Get Global Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/stats", "host": ["{{baseUrl}}"], "path": ["api", "admin", "stats"] }
+          }
+        },
+        {
+          "name": "Get Driver Verification Queue",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/verifications", "host": ["{{baseUrl}}"], "path": ["api", "admin", "verifications"] }
+          }
+        },
+        {
+          "name": "Approve Driver Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approved\",\n  \"comment\": \"Verified with ICBT Student Registry\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/admin/verifications/driver/1/action", "host": ["{{baseUrl}}"], "path": ["api", "admin", "verifications", "driver", "1", "action"] }
+          }
+        }
+      ]
+    }
+  ]
+}

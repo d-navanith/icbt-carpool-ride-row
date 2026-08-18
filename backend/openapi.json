@@ -1,0 +1,442 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ICBT UniRide - Campus Carpooling & Fuel Quota Transit API",
+    "version": "1.0.0",
+    "description": "Comprehensive RESTful and WebSocket API for the ICBT Campus Carpool Platform. Features multi-role authentication (Student, Staff, Driver, Admin), Sri Lanka Odd/Even fuel quota management, seat reservation, driver document verification, in-app messaging, rating system, and real-time emergency SOS broadcast.",
+    "contact": {
+      "name": "ICBT Campus Safety & IT Support",
+      "email": "support@icbt.edu.lk"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Provide your JWT Token as `Bearer <token>` in the Authorization header."
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 3 },
+          "name": { "type": "string", "example": "Nimal Silva" },
+          "email": { "type": "string", "example": "nimal.student@icbt.edu.lk" },
+          "role": { "type": "string", "enum": ["student", "staff"], "example": "student" },
+          "system_role": { "type": "string", "enum": ["user", "admin"], "example": "user" },
+          "student_staff_id": { "type": "string", "example": "ICBT-ST-2024-42" },
+          "phone": { "type": "string", "example": "+94 76 998 1122" },
+          "avatar": { "type": "string", "example": "https://api.dicebear.com/7.x/bottts/svg?seed=Nimal" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DriverVerification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "user_id": { "type": "integer", "example": 2 },
+          "license_number": { "type": "string", "example": "B-9876543-LK" },
+          "vehicle_model": { "type": "string", "example": "Toyota Aqua (Hybrid)" },
+          "vehicle_plate": { "type": "string", "example": "WP-CBH-4521" },
+          "odd_even_type": { "type": "string", "enum": ["ODD", "EVEN"], "example": "ODD" },
+          "seats": { "type": "integer", "example": 4 },
+          "fuel_type": { "type": "string", "enum": ["Petrol", "Hybrid", "Electric", "Diesel"], "example": "Hybrid" },
+          "license_doc_url": { "type": "string" },
+          "vehicle_photo_url": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "example": "approved" },
+          "admin_comment": { "type": "string", "example": "Verified with ICBT Student registry" },
+          "submitted_at": { "type": "string", "format": "date-time" },
+          "reviewed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Ride": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "driver_id": { "type": "integer", "example": 2 },
+          "driver_name": { "type": "string", "example": "Kamal Perera" },
+          "driver_phone": { "type": "string", "example": "+94 71 456 7890" },
+          "origin": { "type": "string", "example": "Gampaha Town" },
+          "destination": { "type": "string", "example": "ICBT Colombo Campus" },
+          "route_waypoints": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["Miriswatta", "Kiribathgoda", "Kelaniya", "Orugodawatta", "Bambalapitiya"]
+          },
+          "departure_date": { "type": "string", "format": "date", "example": "2026-08-16" },
+          "departure_time": { "type": "string", "example": "07:15" },
+          "return_time": { "type": "string", "example": "17:30" },
+          "total_seats": { "type": "integer", "example": 4 },
+          "available_seats": { "type": "integer", "example": 3 },
+          "price_per_seat": { "type": "number", "example": 350 },
+          "vehicle_desc": { "type": "string", "example": "Toyota Aqua (AC / Hybrid) - Silver" },
+          "odd_even_tag": { "type": "string", "enum": ["ODD", "EVEN"], "example": "ODD" },
+          "notes": { "type": "string", "example": "Pickup along Kandy Road" },
+          "status": { "type": "string", "enum": ["active", "completed", "cancelled"], "example": "active" }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "ride_id": { "type": "integer", "example": 1 },
+          "passenger_id": { "type": "integer", "example": 3 },
+          "seats_booked": { "type": "integer", "example": 1 },
+          "pickup_location": { "type": "string", "example": "Kiribathgoda Junction" },
+          "booking_code": { "type": "string", "example": "BK-789234" },
+          "status": { "type": "string", "enum": ["pending", "confirmed", "rejected", "cancelled"], "example": "confirmed" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["System Health"],
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": {
+            "description": "API status online"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new student or staff account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string", "example": "Kasun Bandara" },
+                  "email": { "type": "string", "example": "kasun@icbt.edu.lk" },
+                  "password": { "type": "string", "example": "password123" },
+                  "role": { "type": "string", "enum": ["student", "staff"], "default": "student" },
+                  "student_staff_id": { "type": "string", "example": "ICBT-ST-2024-99" },
+                  "phone": { "type": "string", "example": "+94 77 123 4567" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Account created successfully with JWT token" },
+          "400": { "description": "Missing required fields or email already exists" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login with email and password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "nimal.student@icbt.edu.lk" },
+                  "password": { "type": "string", "example": "student123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful with token & user object" },
+          "401": { "description": "Invalid email or password" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get authenticated user profile",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Profile data with verification info" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/auth/profile": {
+      "put": {
+        "tags": ["Authentication"],
+        "summary": "Update user name, phone, ID, or password",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "student_staff_id": { "type": "string" },
+                  "current_password": { "type": "string" },
+                  "new_password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Profile updated successfully" },
+          "401": { "description": "Invalid current password" }
+        }
+      }
+    },
+    "/api/verification/driver": {
+      "post": {
+        "tags": ["Driver Verification"],
+        "summary": "Submit driver license & vehicle registration for admin approval",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["license_number", "vehicle_model", "vehicle_plate"],
+                "properties": {
+                  "license_number": { "type": "string", "example": "B-9876543-LK" },
+                  "vehicle_model": { "type": "string", "example": "Toyota Aqua" },
+                  "vehicle_plate": { "type": "string", "example": "WP-CBH-4521" },
+                  "seats": { "type": "integer", "example": 4 },
+                  "fuel_type": { "type": "string", "example": "Hybrid" },
+                  "license_doc_url": { "type": "string" },
+                  "vehicle_photo_url": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Application submitted for review" }
+        }
+      }
+    },
+    "/api/rides": {
+      "get": {
+        "tags": ["Rides & Carpools"],
+        "summary": "Search available campus carpool rides",
+        "parameters": [
+          { "name": "origin", "in": "query", "schema": { "type": "string" } },
+          { "name": "destination", "in": "query", "schema": { "type": "string" } },
+          { "name": "date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "oddEven", "in": "query", "schema": { "type": "string", "enum": ["ODD", "EVEN"] } },
+          { "name": "maxPrice", "in": "query", "schema": { "type": "number" } }
+        ],
+        "responses": {
+          "200": { "description": "List of available carpool rides" }
+        }
+      },
+      "post": {
+        "tags": ["Rides & Carpools"],
+        "summary": "Publish a new carpool ride (Verified Drivers only)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["origin", "departure_date", "departure_time", "total_seats"],
+                "properties": {
+                  "origin": { "type": "string", "example": "Gampaha Town" },
+                  "destination": { "type": "string", "example": "ICBT Colombo Campus" },
+                  "route_waypoints": { "type": "array", "items": { "type": "string" }, "example": ["Miriswatta", "Kiribathgoda"] },
+                  "departure_date": { "type": "string", "format": "date", "example": "2026-08-16" },
+                  "departure_time": { "type": "string", "example": "07:15" },
+                  "total_seats": { "type": "integer", "example": 4 },
+                  "price_per_seat": { "type": "number", "example": 350 },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Ride published successfully" },
+          "403": { "description": "Forbidden: Driver verification required" }
+        }
+      }
+    },
+    "/api/rides/{id}/sos": {
+      "post": {
+        "tags": ["Safety & SOS"],
+        "summary": "Broadcast real-time emergency SOS to campus security & connected commuters",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "location": { "type": "string", "example": "Kiribathgoda Junction" },
+                  "message": { "type": "string", "example": "Vehicle breakdown, urgent assist." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "SOS alert broadcasted successfully" }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "tags": ["Bookings"],
+        "summary": "Reserve seats on a carpool ride",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ride_id", "seats_booked", "pickup_location"],
+                "properties": {
+                  "ride_id": { "type": "integer", "example": 1 },
+                  "seats_booked": { "type": "integer", "example": 1 },
+                  "pickup_location": { "type": "string", "example": "Kiribathgoda Junction" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Booking confirmed with boarding code" },
+          "400": { "description": "Insufficient seats or invalid ride" }
+        }
+      }
+    },
+    "/api/bookings/my-bookings": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get all bookings for current passenger",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of passenger's booked rides" }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "tags": ["Ratings & Reviews"],
+        "summary": "Submit star rating & feedback review for driver upon ride completion",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ride_id", "reviewee_id", "rating"],
+                "properties": {
+                  "ride_id": { "type": "integer", "example": 1 },
+                  "reviewee_id": { "type": "integer", "example": 2 },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 },
+                  "comment": { "type": "string", "example": "Smooth, punctual ride to ICBT!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Review created successfully" }
+        }
+      }
+    },
+    "/api/admin/stats": {
+      "get": {
+        "tags": ["Admin & Security"],
+        "summary": "Get global campus carpool and fuel savings statistics",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Admin statistics summary" },
+          "403": { "description": "Admin privileges required" }
+        }
+      }
+    },
+    "/api/admin/verifications": {
+      "get": {
+        "tags": ["Admin & Security"],
+        "summary": "Get pending and processed driver verification queue",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Driver and passenger verification records" }
+        }
+      }
+    },
+    "/api/admin/verifications/driver/{id}/action": {
+      "post": {
+        "tags": ["Admin & Security"],
+        "summary": "Approve or reject a driver application",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["approved", "rejected"], "example": "approved" },
+                  "comment": { "type": "string", "example": "Verified with ICBT Student Registry" }
+                }
+              }
+            }
+          }
+        },
+    "/api/admin/export/rides-csv": {
+      "get": {
+        "tags": ["Admin & Security"],
+        "summary": "Export all carpool rides as downloadable CSV file",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "CSV file download" }
+        }
+      }
+    },
+    "/api/admin/export/users-csv": {
+      "get": {
+        "tags": ["Admin & Security"],
+        "summary": "Export all registered commuters and driver statuses as downloadable CSV file",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "CSV file download" }
+        }
+      }
+    },
+    "/api/analytics/fuel-quota": {
+      "get": {
+        "tags": ["Analytics & Fuel Quota"],
+        "summary": "Get real-time Sri Lanka plate quota rule, fuel pricing, cost savings, and corridor distribution",
+        "responses": {
+          "200": { "description": "Fuel quota analytics summary" }
+        }
+      }
+    }
+  }
+}
