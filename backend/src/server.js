@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const db = require('./db');
 
 const authRoutes = require('./routes/authRoutes');
+const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
 const rideRoutes = require('./routes/rideRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
@@ -54,6 +55,7 @@ app.use(express.static(publicDir));
 
 // REST API Endpoints
 app.use('/api/auth', authRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/verification', verificationRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/bookings', bookingRoutes);

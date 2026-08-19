@@ -18,7 +18,7 @@ describe('ICBT Campus Carpool REST API Tests', () => {
 
   it('Admin Login successfully receives JWT token', async () => {
     const res = await request(app)
-      .post('/api/auth/login')
+      .post('/api/admin/auth/login')
       .send({
         email: 'admin@icbt.edu.lk',
         password: 'admin123'
@@ -28,6 +28,21 @@ describe('ICBT Campus Carpool REST API Tests', () => {
     assert.ok(res.body.token);
     assert.strictEqual(res.body.user.system_role, 'admin');
     adminToken = res.body.token;
+  });
+
+  it('Admin account is blocked from normal user login endpoint', async () => {
+  const res = await request(app)
+    .post('/api/auth/login')
+    .send({
+      email: 'admin@icbt.edu.lk',
+      password: 'admin123'
+    });
+
+  assert.strictEqual(res.status, 403);
+  assert.match(
+    res.body.error,
+    /Admin Portal/i
+  );
   });
 
   it('Verified Driver Login receives valid profile with approved status', async () => {

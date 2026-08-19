@@ -39,10 +39,38 @@ function authenticateToken(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  if (req.user && req.user.system_role === 'admin') {
+  try {
+    if (!req.user?.id) {
+      return res.status(403).json({
+        error: 'Administrator access required.'
+      });
+    }
+
+    const user = db
+      .prepare(`
+        SELECT id, system_role, suspended
+        FROM users
+        WHERE id = ?
+      `)
+      .get(req.user.id);
+
+    if (
+      !user ||
+      user.suspended ||
+      user.system_role !== 'admin'
+    ) {
+      return res.status(403).json({
+        error: 'Administrator access required.'
+      });
+    }
+
     next();
-  } else {
-    res.status(403).json({ error: 'Administrator access required.' });
+  } catch (error) {
+    console.error('Admin authorization error:', error);
+
+    res.status(500).json({
+      error: 'Unable to verify administrator access.'
+    });
   }
 }
 
