@@ -16,6 +16,9 @@ jobs:
     name: Backend Tests
     runs-on: ubuntu-latest
 
+    env:
+      JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+
     defaults:
       run:
         working-directory: backend
