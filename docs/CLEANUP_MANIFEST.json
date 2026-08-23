@@ -1,0 +1,18 @@
+{
+  "removed": [
+    ".env",
+    "backend/.env",
+    "frontend/.env",
+    "backend/carpool_data.json",
+    "frontend/public/favicon.jpg",
+    ".venv/",
+    "backend/node_modules/",
+    "frontend/node_modules/",
+    "frontend/dist/",
+    "backend/public/"
+  ],
+  "kept_core_source": true,
+  "tests_observed": "19/19 passed",
+  "frontend_build_observed": "failed in uploaded archive due to vite permission issue in packaged node_modules",
+  "architecture_note": "JSON pseudo-database remains in this cleanup package; SQLite migration is next step"
+}

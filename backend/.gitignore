@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.local
+*.env
+!*.env.example
+*.log
+carpool_data.json
+
+**/node_modules/
+**/.env
+**/data/*.db
+**/data/*.db-wal
+**/data/*.db-shm
