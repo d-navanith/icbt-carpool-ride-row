@@ -34,5 +34,14 @@ jobs:
       - name: Install backend dependencies
         run: npm ci
 
+      - name: Prepare SQLite database directory
+        run: mkdir -p data
+
+      - name: Initialize SQLite database
+        run: node init-db.js
+
+      - name: Seed SQLite test data
+        run: node src/seed.js
+
       - name: Run backend tests
         run: npm test
