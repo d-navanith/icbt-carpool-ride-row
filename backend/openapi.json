@@ -393,7 +393,14 @@
         "tags": ["Admin & Security"],
         "summary": "Approve or reject a driver application",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -402,13 +409,167 @@
                 "type": "object",
                 "required": ["action"],
                 "properties": {
-                  "action": { "type": "string", "enum": ["approved", "rejected"], "example": "approved" },
-                  "comment": { "type": "string", "example": "Verified with ICBT Student Registry" }
+                  "action": {
+                    "type": "string",
+                    "enum": ["approved", "rejected"],
+                    "example": "approved"
+                  },
+                  "comment": {
+                    "type": "string",
+                    "example": "Verified with ICBT Student Registry"
+                  }
                 }
               }
             }
           }
         },
+        "responses": {
+          "200": { "description": "Verification action completed" },
+          "400": { "description": "Invalid verification action" },
+          "403": { "description": "Admin privileges required" },
+          "404": { "description": "Verification record not found" }
+        }
+      }
+    },
+    "/api/admin/account": {
+      "get": {
+        "tags": ["Admin Account"],
+        "summary": "Get the current administrator account",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Administrator account details" },
+          "401": { "description": "Authentication required" },
+          "403": { "description": "Administrator privileges required" }
+        }
+      }
+    },
+    "/api/admin/account/profile": {
+      "put": {
+        "tags": ["Admin Account"],
+        "summary": "Update the current administrator profile",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "student_staff_id": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Administrator profile updated" },
+          "400": { "description": "Invalid profile data" },
+          "403": { "description": "Administrator privileges required" }
+        }
+      }
+    },
+    "/api/admin/account/password": {
+      "post": {
+        "tags": ["Admin Account"],
+        "summary": "Change the current administrator password",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["current_password", "new_password", "confirm_password"],
+                "properties": {
+                  "current_password": { "type": "string", "format": "password" },
+                  "new_password": { "type": "string", "format": "password", "minLength": 8 },
+                  "confirm_password": { "type": "string", "format": "password", "minLength": 8 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Administrator password changed" },
+          "400": { "description": "Invalid password request" },
+          "401": { "description": "Current password is incorrect" },
+          "403": { "description": "Administrator privileges required" }
+        }
+      }
+    },
+    "/api/admin/administrators": {
+      "get": {
+        "tags": ["Admin Account"],
+        "summary": "List administrator accounts",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Administrator accounts" },
+          "403": { "description": "Administrator privileges required" }
+        }
+      },
+      "post": {
+        "tags": ["Admin Account"],
+        "summary": "Create a new administrator account",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "format": "password", "minLength": 8 },
+                  "role": { "type": "string", "enum": ["student", "staff"], "default": "staff" },
+                  "student_staff_id": { "type": "string" },
+                  "phone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Administrator account created" },
+          "400": { "description": "Invalid or duplicate administrator data" },
+          "403": { "description": "Administrator privileges required" }
+        }
+      }
+    },
+    "/api/admin/users/{id}/promote": {
+      "post": {
+        "tags": ["Admin Account"],
+        "summary": "Promote an existing campus user to administrator",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["admin_password"],
+                "properties": {
+                  "admin_password": { "type": "string", "format": "password" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User promoted to administrator" },
+          "400": { "description": "Invalid promotion request" },
+          "401": { "description": "Admin password is incorrect" },
+          "403": { "description": "Administrator privileges required" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
     "/api/admin/export/rides-csv": {
       "get": {
         "tags": ["Admin & Security"],
