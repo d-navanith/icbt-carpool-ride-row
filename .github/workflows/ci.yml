@@ -46,5 +46,5 @@ jobs:
       - name: Seed SQLite test data
         run: node src/seed.js
 
-      - name: Run backend tests
-        run: npm test
+      - name: Run backend tests with coverage
+        run: npm run test:coverage

@@ -25,6 +25,8 @@ const { JWT_SECRET, canAccessRideChat } = require("./auth");
 
 const app = express();
 
+app.disable("x-powered-by");
+
 /* =========================================================
    CORS CONFIGURATION
    ========================================================= */
