@@ -11,6 +11,7 @@ import DriverVerificationModal from './components/DriverVerificationModal';
 import ProfilePage from './pages/ProfilePage';
 import ToastContainer from './components/ToastContainer';
 import ErrorBoundary from './components/ErrorBoundary';
+import AdminNavbar from './components/AdminNavbar';
 
 function MainLayout() {
   const { user, loading, activeMode, isAdmin } = useAuth();
@@ -88,6 +89,7 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white relative overflow-x-hidden">
+      <AdminNavbar />
       <div className="fixed top-[-10%] left-[-10%] w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-blue-600/20 to-indigo-500/15 blur-[140px] pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[650px] h-[650px] rounded-full bg-gradient-to-br from-indigo-600/15 via-blue-600/10 to-teal-400/10 blur-[160px] pointer-events-none" />
       <main className="relative z-10 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">

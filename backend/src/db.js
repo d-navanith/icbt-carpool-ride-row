@@ -1,7 +1,11 @@
 const path = require('path');
+const fs = require('fs');
 const Database = require('better-sqlite3');
 
-const dbPath = path.join(__dirname, '..', 'data', 'carpool.db');
+const dataDir = path.join(__dirname, '..', 'data');
+fs.mkdirSync(dataDir, { recursive: true });
+
+const dbPath = path.join(dataDir, 'carpool.db');
 
 const db = new Database(dbPath, {
   timeout: 5000

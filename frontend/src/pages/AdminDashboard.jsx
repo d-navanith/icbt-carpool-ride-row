@@ -3,7 +3,7 @@ import {
   ShieldCheck, ShieldAlert, Check, X, Users, Car, Fuel, AlertCircle,
   RefreshCw, Trash2, Search, FileText, CheckCircle2, TrendingUp, Siren,
   PhoneCall, Filter, ExternalLink, Eye, CheckSquare, Sparkles, MapPin,
-  Download, Activity, BarChart3, LineChart as LineChartIcon, Award, DollarSign, LogOut,
+  Download, Activity, BarChart3, LineChart as LineChartIcon, Award, DollarSign,
   Calendar, Clock, ChevronRight, Zap
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -54,7 +54,7 @@ const Sparkline = ({ data = [12, 18, 15, 25, 22, 30, 28], color = '#3b82f6', hei
 };
 
 export default function AdminDashboard() {
-  const { token, user, refreshProfile, adminLogout } = useAuth();
+  const { token, user, refreshProfile } = useAuth();
   const { socket, notifications } = useSocket();
   const [sosAlerts, setSosAlerts] = useState([]);
 
@@ -76,6 +76,18 @@ export default function AdminDashboard() {
   const [allRides, setAllRides] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'verifications' | 'rides' | 'users' | 'sos'
+
+  useEffect(() => {
+    const handleAdminNavigation = (event) => {
+      const nextTab = event.detail;
+      if (['analytics', 'verifications', 'rides', 'users', 'sos'].includes(nextTab)) {
+        setActiveTab(nextTab);
+      }
+    };
+
+    window.addEventListener('admin:navigate', handleAdminNavigation);
+    return () => window.removeEventListener('admin:navigate', handleAdminNavigation);
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -325,14 +337,6 @@ export default function AdminDashboard() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Sync Live</span>
-          </button>
-          <button
-            onClick={() => adminLogout()}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 hover:text-red-200 text-xs font-extrabold border border-red-500/30 transition"
-            title="Sign out of Admin Portal"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Admin Sign Out</span>
           </button>
         </div>
       </div>
