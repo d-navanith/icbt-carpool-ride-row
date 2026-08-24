@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { authenticateToken, requireAdmin } = require('../auth');
 
@@ -6,6 +7,73 @@ const router = express.Router();
 
 // Apply auth and admin check to all admin endpoints
 router.use(authenticateToken, requireAdmin);
+
+const MAX_NAME_LENGTH = 100;
+const MAX_PHONE_LENGTH = 30;
+const MAX_ID_LENGTH = 100;
+const MIN_PASSWORD_LENGTH = 8;
+
+const cleanString = (value, maxLength) => {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  if (!cleaned || cleaned.length > maxLength) return null;
+  return cleaned;
+};
+
+const normalizeEmail = (value) => {
+  if (typeof value !== 'string') return null;
+  const email = value.trim().toLowerCase();
+  if (!email || email.length > 255) return null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+};
+
+const getCurrentAdmin = (adminId) => {
+  const admin = db.prepare(`
+    SELECT id, name, email, role, system_role, student_staff_id, phone, avatar, suspended, created_at
+    FROM users
+    WHERE id = ?
+    LIMIT 1
+  `).get(adminId);
+
+  if (!admin || admin.system_role !== 'admin' || admin.suspended) {
+    const error = new Error('Administrator access required.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return admin;
+};
+
+const verifyAdminPassword = (adminId, password) => {
+  if (typeof password !== 'string' || !password) return false;
+
+  const record = db.prepare(`
+    SELECT password_hash
+    FROM users
+    WHERE id = ?
+    LIMIT 1
+  `).get(adminId);
+
+  return Boolean(record && bcrypt.compareSync(password, record.password_hash));
+};
+
+const assertCurrentAdminPassword = (adminId, currentPassword) => {
+  if (!verifyAdminPassword(adminId, currentPassword)) {
+    const error = new Error('Current administrator password is incorrect.');
+    error.statusCode = 401;
+    throw error;
+  }
+};
+
+const getSafeAdmin = (adminId) => {
+  return db.prepare(`
+    SELECT id, name, email, role, system_role, student_staff_id, phone, avatar, suspended, created_at
+    FROM users
+    WHERE id = ?
+    LIMIT 1
+  `).get(adminId);
+};
 
 // 1. Dashboard Global Stats
 router.get('/stats', (req, res) => {
@@ -17,11 +85,9 @@ router.get('/stats', (req, res) => {
     const activeRides = db.prepare('SELECT COUNT(*) as count FROM rides WHERE status = "active"').get().count;
     const totalBookings = db.prepare('SELECT COUNT(*) as count FROM bookings WHERE status = "confirmed"').get().count;
 
-    // Fuel saving estimate: Each carpool shared ride with 3 passengers saves approx 3.5L of fuel per 35km campus trip
     const estimatedLitersSaved = (totalBookings * 3.2).toFixed(1);
-    const estimatedCostSavedLKR = (estimatedLitersSaved * 370).toLocaleString(); // ~370 LKR per liter
+    const estimatedCostSavedLKR = (estimatedLitersSaved * 370).toLocaleString();
 
-    // Odd-Even distribution
     const oddDrivers = db.prepare('SELECT COUNT(*) as count FROM driver_verifications WHERE odd_even_type = "ODD" AND status = "approved"').get().count;
     const evenDrivers = db.prepare('SELECT COUNT(*) as count FROM driver_verifications WHERE odd_even_type = "EVEN" AND status = "approved"').get().count;
 
@@ -42,6 +108,212 @@ router.get('/stats', (req, res) => {
   } catch (error) {
     console.error('Admin stats error:', error);
     res.status(500).json({ error: 'Failed to fetch admin stats.' });
+  }
+});
+
+// 2. Get current administrator account
+router.get('/account', (req, res) => {
+  try {
+    const admin = getCurrentAdmin(req.user.id);
+    res.json({ admin });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || 'Failed to fetch administrator account.' });
+  }
+});
+
+// 3. Update current administrator profile
+router.put('/account/profile', (req, res) => {
+  try {
+    const admin = getCurrentAdmin(req.user.id);
+
+    const name = cleanString(req.body.name, MAX_NAME_LENGTH);
+    const phone = req.body.phone === undefined ? admin.phone : cleanString(req.body.phone, MAX_PHONE_LENGTH);
+    const studentStaffId = req.body.student_staff_id === undefined
+      ? admin.student_staff_id
+      : cleanString(req.body.student_staff_id, MAX_ID_LENGTH);
+
+    if (!name) {
+      return res.status(400).json({ error: 'Administrator name is required and must be 100 characters or fewer.' });
+    }
+
+    if (phone === null || studentStaffId === null) {
+      return res.status(400).json({ error: 'Phone and staff ID must be valid text values.' });
+    }
+
+    db.prepare(`
+      UPDATE users
+      SET name = ?, phone = ?, student_staff_id = ?, avatar = ?
+      WHERE id = ?
+    `).run(
+      name,
+      phone,
+      studentStaffId,
+      `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
+      admin.id
+    );
+
+    res.json({
+      message: 'Administrator profile updated successfully.',
+      admin: getSafeAdmin(admin.id)
+    });
+  } catch (error) {
+    console.error('Admin profile update error:', error);
+    res.status(error.statusCode || 500).json({ error: error.message || 'Failed to update administrator profile.' });
+  }
+});
+
+// 4. Change current administrator password
+router.post('/account/password', (req, res) => {
+  try {
+    const admin = getCurrentAdmin(req.user.id);
+    const { current_password, new_password, confirm_password } = req.body;
+
+    if (typeof new_password !== 'string' || new_password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters.` });
+    }
+
+    if (new_password !== confirm_password) {
+      return res.status(400).json({ error: 'New password and confirmation password do not match.' });
+    }
+
+    assertCurrentAdminPassword(admin.id, current_password);
+
+    const passwordHash = bcrypt.hashSync(new_password, 12);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, admin.id);
+
+    res.json({ message: 'Administrator password changed successfully. Please sign in again with the new password.' });
+  } catch (error) {
+    console.error('Admin password change error:', error);
+    res.status(error.statusCode || 500).json({ error: error.message || 'Failed to change administrator password.' });
+  }
+});
+
+// 5. List administrators (safe fields only)
+router.get('/administrators', (req, res) => {
+  try {
+    const administrators = db.prepare(`
+      SELECT id, name, email, role, system_role, student_staff_id, phone, avatar, suspended, created_at
+      FROM users
+      WHERE system_role = 'admin'
+      ORDER BY created_at ASC, id ASC
+    `).all();
+
+    res.json({ administrators });
+  } catch (error) {
+    console.error('Admin list error:', error);
+    res.status(500).json({ error: 'Failed to fetch administrators.' });
+  }
+});
+
+// 6. Create a new administrator account
+router.post('/administrators', (req, res) => {
+  try {
+    const creator = getCurrentAdmin(req.user.id);
+    const name = cleanString(req.body.name, MAX_NAME_LENGTH);
+    const email = normalizeEmail(req.body.email);
+    const password = req.body.password;
+    const currentPassword = req.body.current_password;
+    const role = req.body.role === 'staff' ? 'staff' : 'student';
+    const studentStaffId = req.body.student_staff_id === undefined ? '' : cleanString(req.body.student_staff_id, MAX_ID_LENGTH);
+    const phone = req.body.phone === undefined ? '' : cleanString(req.body.phone, MAX_PHONE_LENGTH);
+
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Valid name and email are required.' });
+    }
+
+    if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: `New administrator password must be at least ${MIN_PASSWORD_LENGTH} characters.` });
+    }
+
+    if (studentStaffId === null || phone === null) {
+      return res.status(400).json({ error: 'Staff ID and phone must be valid text values.' });
+    }
+
+    assertCurrentAdminPassword(creator.id, currentPassword);
+
+    const existing = db.prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email);
+    if (existing) {
+      return res.status(409).json({ error: 'An account with this email address already exists.' });
+    }
+
+    const passwordHash = bcrypt.hashSync(password, 12);
+
+    const result = db.prepare(`
+      INSERT INTO users (
+        name,
+        email,
+        password_hash,
+        role,
+        system_role,
+        student_staff_id,
+        phone,
+        avatar
+      )
+      VALUES (?, ?, ?, ?, 'admin', ?, ?, ?)
+    `).run(
+      name,
+      email,
+      passwordHash,
+      role,
+      studentStaffId,
+      phone,
+      `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`
+    );
+
+    res.status(201).json({
+      message: 'Administrator account created successfully.',
+      administrator: getSafeAdmin(result.lastInsertRowid)
+    });
+  } catch (error) {
+    console.error('Admin creation error:', error);
+    res.status(error.statusCode || 500).json({ error: error.message || 'Failed to create administrator account.' });
+  }
+});
+
+// 7. Promote an existing user to administrator
+router.post('/users/:id/promote', (req, res) => {
+  try {
+    const creator = getCurrentAdmin(req.user.id);
+    const targetId = Number(req.params.id);
+
+    if (!Number.isInteger(targetId) || targetId <= 0) {
+      return res.status(400).json({ error: 'Invalid user ID.' });
+    }
+
+    if (targetId === creator.id) {
+      return res.status(400).json({ error: 'You are already an administrator.' });
+    }
+
+    assertCurrentAdminPassword(creator.id, req.body.current_password);
+
+    const target = db.prepare(`
+      SELECT id, name, email, role, system_role, suspended
+      FROM users
+      WHERE id = ?
+      LIMIT 1
+    `).get(targetId);
+
+    if (!target) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    if (target.suspended) {
+      return res.status(409).json({ error: 'Suspended accounts cannot be promoted to administrator.' });
+    }
+
+    if (target.system_role === 'admin') {
+      return res.status(409).json({ error: 'This user is already an administrator.' });
+    }
+
+    db.prepare('UPDATE users SET system_role = "admin" WHERE id = ?').run(target.id);
+
+    res.json({
+      message: 'User promoted to administrator successfully.',
+      administrator: getSafeAdmin(target.id)
+    });
+  } catch (error) {
+    console.error('Admin promotion error:', error);
+    res.status(error.statusCode || 500).json({ error: error.message || 'Failed to promote user.' });
   }
 });
 
@@ -303,12 +575,26 @@ router.patch('/rides/:id/cancel', (req, res) => {
 // 11. Suspend User
 router.patch('/users/:id/suspend', (req, res) => {
   try {
-    const userId = req.params.id;
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user ID.' });
+    }
+
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: 'You cannot suspend your own administrator account.' });
+    }
+
+    const user = db.prepare('SELECT id, system_role FROM users WHERE id = ?').get(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    db.prepare('UPDATE users SET suspended = ? WHERE id = ?').run(true, userId);
+
+    if (user.system_role === 'admin') {
+      return res.status(403).json({ error: 'Administrator accounts cannot be suspended from the general user management panel.' });
+    }
+
+    db.prepare('UPDATE users SET suspended = 1 WHERE id = ?').run(userId);
     res.json({ message: 'User suspended' });
   } catch (error) {
+    console.error('Admin suspend user error:', error);
     res.status(500).json({ error: 'Failed to suspend user.' });
   }
 });
@@ -316,12 +602,18 @@ router.patch('/users/:id/suspend', (req, res) => {
 // 12. Unsuspend User
 router.patch('/users/:id/unsuspend', (req, res) => {
   try {
-    const userId = req.params.id;
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user ID.' });
+    }
+
+    const user = db.prepare('SELECT id, system_role FROM users WHERE id = ?').get(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    db.prepare('UPDATE users SET suspended = ? WHERE id = ?').run(false, userId);
+
+    db.prepare('UPDATE users SET suspended = 0 WHERE id = ?').run(userId);
     res.json({ message: 'User unsuspended' });
   } catch (error) {
+    console.error('Admin unsuspend user error:', error);
     res.status(500).json({ error: 'Failed to unsuspend user.' });
   }
 });
