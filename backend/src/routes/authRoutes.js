@@ -3,10 +3,7 @@ const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 
 const db = require("../db");
-const {
-  generateToken,
-  authenticateToken,
-} = require("../auth");
+const { generateToken, authenticateToken } = require("../auth");
 
 const router = express.Router();
 
@@ -38,8 +35,7 @@ const registerLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error:
-      "Too many registration attempts. Please try again later.",
+    error: "Too many registration attempts. Please try again later.",
   },
 });
 
@@ -49,13 +45,9 @@ const registerLimiter = rateLimit({
  * =========================================================
  */
 
-const EMAIL_REGEX =
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const ALLOWED_USER_ROLES = [
-  "student",
-  "staff",
-];
+const ALLOWED_USER_ROLES = ["student", "staff"];
 
 /*
  * =========================================================
@@ -63,16 +55,17 @@ const ALLOWED_USER_ROLES = [
  * =========================================================
  */
 
-router.post("/register", registerLimiter, (req, res) => {
+const registerLimiterForEnvironment = (req, res, next) => {
+  if (process.env.NODE_ENV === "test") {
+    return next();
+  }
+
+  return registerLimiter(req, res, next);
+};
+
+router.post("/register", registerLimiterForEnvironment, (req, res) => {
   try {
-    const {
-      name,
-      email,
-      password,
-      role,
-      student_staff_id,
-      phone,
-    } = req.body;
+    const { name, email, password, role, student_staff_id, phone } = req.body;
 
     /*
      * Basic validation
@@ -83,8 +76,7 @@ router.post("/register", registerLimiter, (req, res) => {
       typeof password !== "string"
     ) {
       return res.status(400).json({
-        error:
-          "Name, email, and password are required.",
+        error: "Name, email, and password are required.",
       });
     }
 
@@ -93,8 +85,7 @@ router.post("/register", registerLimiter, (req, res) => {
 
     if (!normalizedName || !normalizedEmail || !password) {
       return res.status(400).json({
-        error:
-          "Name, email, and password are required.",
+        error: "Name, email, and password are required.",
       });
     }
 
@@ -133,15 +124,13 @@ router.post("/register", registerLimiter, (req, res) => {
      */
     if (password.length < 6) {
       return res.status(400).json({
-        error:
-          "Password must be at least 6 characters.",
+        error: "Password must be at least 6 characters.",
       });
     }
 
     if (password.length > 128) {
       return res.status(400).json({
-        error:
-          "Password must not exceed 128 characters.",
+        error: "Password must not exceed 128 characters.",
       });
     }
 
@@ -176,26 +165,21 @@ router.post("/register", registerLimiter, (req, res) => {
 
     if (existingUser) {
       return res.status(409).json({
-        error:
-          "An account with this email address already exists.",
+        error: "An account with this email address already exists.",
       });
     }
 
     /*
      * Hash password
      */
-    const passwordHash = bcrypt.hashSync(
-      password,
-      10,
-    );
+    const passwordHash = bcrypt.hashSync(password, 10);
 
     /*
      * Create avatar safely from the user name.
      */
-    const avatarUrl =
-      `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
-        normalizedName,
-      )}`;
+    const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
+      normalizedName,
+    )}`;
 
     /*
      * Insert user.
@@ -224,12 +208,8 @@ router.post("/register", registerLimiter, (req, res) => {
         normalizedEmail,
         passwordHash,
         selectedRole,
-        typeof student_staff_id === "string"
-          ? student_staff_id.trim()
-          : "",
-        typeof phone === "string"
-          ? phone.trim()
-          : "",
+        typeof student_staff_id === "string" ? student_staff_id.trim() : "",
+        typeof phone === "string" ? phone.trim() : "",
         avatarUrl,
       );
 
@@ -276,10 +256,7 @@ router.post("/register", registerLimiter, (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
-      "Registration error:",
-      error,
-    );
+    console.error("Registration error:", error);
 
     return res.status(500).json({
       error: "Server error during registration.",
@@ -307,18 +284,15 @@ router.post("/login", loginLimiter, (req, res) => {
       !password
     ) {
       return res.status(400).json({
-        error:
-          "Email and password are required.",
+        error: "Email and password are required.",
       });
     }
 
-    const normalizedEmail =
-      email.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
     if (!EMAIL_REGEX.test(normalizedEmail)) {
       return res.status(400).json({
-        error:
-          "Please provide a valid email address.",
+        error: "Please provide a valid email address.",
       });
     }
 
@@ -350,11 +324,7 @@ router.post("/login", loginLimiter, (req, res) => {
      * Verify password before revealing
      * account-specific authorization information.
      */
-    const validPassword =
-      bcrypt.compareSync(
-        password,
-        user.password_hash,
-      );
+    const validPassword = bcrypt.compareSync(password, user.password_hash);
 
     if (!validPassword) {
       return res.status(401).json({
@@ -368,8 +338,7 @@ router.post("/login", loginLimiter, (req, res) => {
      */
     if (user.system_role === "admin") {
       return res.status(403).json({
-        error:
-          "Administrator account detected. Please use the Admin Portal.",
+        error: "Administrator account detected. Please use the Admin Portal.",
       });
     }
 
@@ -410,10 +379,7 @@ router.post("/login", loginLimiter, (req, res) => {
     /*
      * Never send password_hash to client.
      */
-    const {
-      password_hash,
-      ...safeUser
-    } = user;
+    const { password_hash, ...safeUser } = user;
 
     /*
      * Safe JWT payload
@@ -431,17 +397,12 @@ router.post("/login", loginLimiter, (req, res) => {
       token,
       user: {
         ...safeUser,
-        driver_verification:
-          driverVerification || null,
-        passenger_verification:
-          passengerVerification || null,
+        driver_verification: driverVerification || null,
+        passenger_verification: passengerVerification || null,
       },
     });
   } catch (error) {
-    console.error(
-      "Login error:",
-      error,
-    );
+    console.error("Login error:", error);
 
     return res.status(500).json({
       error: "Server error during login.",
@@ -455,14 +416,11 @@ router.post("/login", loginLimiter, (req, res) => {
  * =========================================================
  */
 
-router.get(
-  "/me",
-  authenticateToken,
-  (req, res) => {
-    try {
-      const user = db
-        .prepare(
-          `
+router.get("/me", authenticateToken, (req, res) => {
+  try {
+    const user = db
+      .prepare(
+        `
           SELECT
             id,
             name,
@@ -477,64 +435,56 @@ router.get(
           FROM users
           WHERE id = ?
           `,
-        )
-        .get(req.user.id);
+      )
+      .get(req.user.id);
 
-      if (!user) {
-        return res.status(404).json({
-          error: "User not found.",
-        });
-      }
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found.",
+      });
+    }
 
-      if (user.suspended) {
-        return res.status(403).json({
-          error:
-            "Your account has been suspended.",
-        });
-      }
+    if (user.suspended) {
+      return res.status(403).json({
+        error: "Your account has been suspended.",
+      });
+    }
 
-      const driverVerification = db
-        .prepare(
-          `
+    const driverVerification = db
+      .prepare(
+        `
           SELECT *
           FROM driver_verifications
           WHERE user_id = ?
           `,
-        )
-        .get(user.id);
+      )
+      .get(user.id);
 
-      const passengerVerification = db
-        .prepare(
-          `
+    const passengerVerification = db
+      .prepare(
+        `
           SELECT *
           FROM passenger_verifications
           WHERE user_id = ?
           `,
-        )
-        .get(user.id);
+      )
+      .get(user.id);
 
-      return res.status(200).json({
-        user: {
-          ...user,
-          driver_verification:
-            driverVerification || null,
-          passenger_verification:
-            passengerVerification || null,
-        },
-      });
-    } catch (error) {
-      console.error(
-        "Auth /me error:",
-        error,
-      );
+    return res.status(200).json({
+      user: {
+        ...user,
+        driver_verification: driverVerification || null,
+        passenger_verification: passengerVerification || null,
+      },
+    });
+  } catch (error) {
+    console.error("Auth /me error:", error);
 
-      return res.status(500).json({
-        error:
-          "Server error fetching user profile.",
-      });
-    }
-  },
-);
+    return res.status(500).json({
+      error: "Server error fetching user profile.",
+    });
+  }
+});
 
 /*
  * =========================================================
@@ -542,141 +492,113 @@ router.get(
  * =========================================================
  */
 
-router.put(
-  "/profile",
-  authenticateToken,
-  (req, res) => {
-    try {
-      const {
-        name,
-        phone,
-        student_staff_id,
-        current_password,
-        new_password,
-      } = req.body;
+router.put("/profile", authenticateToken, (req, res) => {
+  try {
+    const { name, phone, student_staff_id, current_password, new_password } =
+      req.body;
 
-      const user = db
-        .prepare(
-          `
+    const user = db
+      .prepare(
+        `
           SELECT *
           FROM users
           WHERE id = ?
           `,
-        )
-        .get(req.user.id);
+      )
+      .get(req.user.id);
 
-      if (!user) {
-        return res.status(404).json({
-          error: "User not found.",
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found.",
+      });
+    }
+
+    if (user.suspended) {
+      return res.status(403).json({
+        error: "Your account has been suspended.",
+      });
+    }
+
+    /*
+     * Name validation
+     */
+    if (name !== undefined) {
+      if (typeof name !== "string") {
+        return res.status(400).json({
+          error: "Name must be a string.",
         });
       }
 
-      if (user.suspended) {
-        return res.status(403).json({
-          error:
-            "Your account has been suspended.",
+      if (name.trim().length < 2 || name.trim().length > 100) {
+        return res.status(400).json({
+          error: "Name must contain between 2 and 100 characters.",
+        });
+      }
+    }
+
+    /*
+     * Password update
+     */
+    if (new_password !== undefined) {
+      if (typeof new_password !== "string" || !new_password) {
+        return res.status(400).json({
+          error: "New password must be provided.",
         });
       }
 
-      /*
-       * Name validation
-       */
-      if (name !== undefined) {
-        if (typeof name !== "string") {
-          return res.status(400).json({
-            error: "Name must be a string.",
-          });
-        }
-
-        if (
-          name.trim().length < 2 ||
-          name.trim().length > 100
-        ) {
-          return res.status(400).json({
-            error:
-              "Name must contain between 2 and 100 characters.",
-          });
-        }
+      if (!current_password) {
+        return res.status(400).json({
+          error: "Current password is required to set a new password.",
+        });
       }
 
-      /*
-       * Password update
-       */
-      if (new_password !== undefined) {
-        if (
-          typeof new_password !== "string" ||
-          !new_password
-        ) {
-          return res.status(400).json({
-            error:
-              "New password must be provided.",
-          });
-        }
+      const validCurrentPassword = bcrypt.compareSync(
+        current_password,
+        user.password_hash,
+      );
 
-        if (!current_password) {
-          return res.status(400).json({
-            error:
-              "Current password is required to set a new password.",
-          });
-        }
-
-        const validCurrentPassword =
-          bcrypt.compareSync(
-            current_password,
-            user.password_hash,
-          );
-
-        if (!validCurrentPassword) {
-          return res.status(401).json({
-            error:
-              "Current password is incorrect.",
-          });
-        }
-
-        if (new_password.length < 6) {
-          return res.status(400).json({
-            error:
-              "New password must be at least 6 characters.",
-          });
-        }
-
-        if (new_password.length > 128) {
-          return res.status(400).json({
-            error:
-              "New password must not exceed 128 characters.",
-          });
-        }
+      if (!validCurrentPassword) {
+        return res.status(401).json({
+          error: "Current password is incorrect.",
+        });
       }
 
-      const updatedName =
-        name !== undefined
-          ? name.trim()
-          : user.name;
+      if (new_password.length < 6) {
+        return res.status(400).json({
+          error: "New password must be at least 6 characters.",
+        });
+      }
 
-      const updatedPhone =
-        phone !== undefined
-          ? String(phone).trim()
-          : user.phone;
+      if (new_password.length > 128) {
+        return res.status(400).json({
+          error: "New password must not exceed 128 characters.",
+        });
+      }
+    }
 
-      const updatedStudentStaffId =
-        student_staff_id !== undefined
-          ? String(student_staff_id).trim()
-          : user.student_staff_id;
+    const updatedName = name !== undefined ? name.trim() : user.name;
 
-      const updatedHash = new_password
-        ? bcrypt.hashSync(new_password, 10)
-        : user.password_hash;
+    const updatedPhone =
+      phone !== undefined ? String(phone).trim() : user.phone;
 
-      const updatedAvatar =
-        `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
-          updatedName,
-        )}`;
+    const updatedStudentStaffId =
+      student_staff_id !== undefined
+        ? String(student_staff_id).trim()
+        : user.student_staff_id;
 
-      /*
-       * Update only the authenticated user's record.
-       */
-      db.prepare(
-        `
+    const updatedHash = new_password
+      ? bcrypt.hashSync(new_password, 10)
+      : user.password_hash;
+
+    const updatedAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
+      updatedName,
+    )}`;
+
+    /*
+     * Update only the authenticated user's record.
+     */
+    db.prepare(
+      `
         UPDATE users
         SET
           name = ?,
@@ -686,21 +608,21 @@ router.put(
           avatar = ?
         WHERE id = ?
         `,
-      ).run(
-        updatedName,
-        updatedPhone,
-        updatedStudentStaffId,
-        updatedHash,
-        updatedAvatar,
-        req.user.id,
-      );
+    ).run(
+      updatedName,
+      updatedPhone,
+      updatedStudentStaffId,
+      updatedHash,
+      updatedAvatar,
+      req.user.id,
+    );
 
-      /*
-       * Fetch updated safe profile
-       */
-      const updated = db
-        .prepare(
-          `
+    /*
+     * Fetch updated safe profile
+     */
+    const updated = db
+      .prepare(
+        `
           SELECT
             id,
             name,
@@ -714,52 +636,44 @@ router.put(
           FROM users
           WHERE id = ?
           `,
-        )
-        .get(req.user.id);
+      )
+      .get(req.user.id);
 
-      const driverVerification = db
-        .prepare(
-          `
+    const driverVerification = db
+      .prepare(
+        `
           SELECT *
           FROM driver_verifications
           WHERE user_id = ?
           `,
-        )
-        .get(req.user.id);
+      )
+      .get(req.user.id);
 
-      const passengerVerification = db
-        .prepare(
-          `
+    const passengerVerification = db
+      .prepare(
+        `
           SELECT *
           FROM passenger_verifications
           WHERE user_id = ?
           `,
-        )
-        .get(req.user.id);
+      )
+      .get(req.user.id);
 
-      return res.status(200).json({
-        message:
-          "Profile updated successfully.",
-        user: {
-          ...updated,
-          driver_verification:
-            driverVerification || null,
-          passenger_verification:
-            passengerVerification || null,
-        },
-      });
-    } catch (error) {
-      console.error(
-        "Profile update error:",
-        error,
-      );
+    return res.status(200).json({
+      message: "Profile updated successfully.",
+      user: {
+        ...updated,
+        driver_verification: driverVerification || null,
+        passenger_verification: passengerVerification || null,
+      },
+    });
+  } catch (error) {
+    console.error("Profile update error:", error);
 
-      return res.status(500).json({
-        error:
-          "Server error updating profile.",
-      });
-    }
-  },
-);
+    return res.status(500).json({
+      error: "Server error updating profile.",
+    });
+  }
+});
 
 module.exports = router;
