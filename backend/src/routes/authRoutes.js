@@ -219,18 +219,18 @@ router.post("/register", registerLimiterForEnvironment, (req, res) => {
     const newUser = db
       .prepare(
         `
-        SELECT
-          id,
-          name,
-          email,
-          role,
-          system_role,
-          student_staff_id,
-          phone,
-          avatar,
-          created_at
-        FROM users
-        WHERE id = ?
+          SELECT
+            id,
+            name,
+            email,
+            role,
+            system_role,
+            student_staff_id,
+            phone,
+            avatar,
+            created_at
+          FROM users
+          WHERE id = ?
         `,
       )
       .get(result.lastInsertRowid);
@@ -339,17 +339,6 @@ router.post("/login", loginLimiter, (req, res) => {
     if (user.system_role === "admin") {
       return res.status(403).json({
         error: "Administrator account detected. Please use the Admin Portal.",
-      });
-    }
-
-    /*
-     * Suspended accounts cannot use the
-     * normal user login.
-     */
-    if (user.suspended) {
-      return res.status(403).json({
-        error:
-          "Your account has been suspended. Please contact the administrator.",
       });
     }
 

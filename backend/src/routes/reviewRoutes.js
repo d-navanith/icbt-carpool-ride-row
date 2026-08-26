@@ -13,19 +13,13 @@ const router = express.Router();
 const parsePositiveInteger = (value) => {
   const number = Number(value);
 
-  return Number.isInteger(number) && number > 0
-    ? number
-    : null;
+  return Number.isInteger(number) && number > 0 ? number : null;
 };
 
 const parseRating = (value) => {
   const rating = Number(value);
 
-  if (
-    !Number.isInteger(rating) ||
-    rating < 1 ||
-    rating > 5
-  ) {
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return null;
   }
 
@@ -33,10 +27,7 @@ const parseRating = (value) => {
 };
 
 const normalizeComment = (value) => {
-  if (
-    value === undefined ||
-    value === null
-  ) {
+  if (value === undefined || value === null) {
     return "";
   }
 
@@ -55,53 +46,6 @@ const normalizeComment = (value) => {
 
 /*
  * =========================================================
- * ACTIVE USER CHECK
- * =========================================================
- */
-
-const getActiveUser = (userId) => {
-  const user = db
-    .prepare(
-      `
-      SELECT
-        id,
-        name,
-        email,
-        role,
-        system_role,
-        phone,
-        avatar,
-        suspended
-      FROM users
-      WHERE id = ?
-      LIMIT 1
-      `,
-    )
-    .get(userId);
-
-  if (!user) {
-    const error = new Error(
-      "User account not found.",
-    );
-
-    error.statusCode = 401;
-    throw error;
-  }
-
-  if (user.suspended) {
-    const error = new Error(
-      "Your account has been suspended.",
-    );
-
-    error.statusCode = 403;
-    throw error;
-  }
-
-  return user;
-};
-
-/*
- * =========================================================
  * HISTORICAL PASSENGER BOOKING LOOKUP
  * =========================================================
  *
@@ -114,10 +58,7 @@ const getActiveUser = (userId) => {
  * blocks duplicate reviews.
  */
 
-const findPassengerBooking = (
-  rideId,
-  passengerId,
-) => {
+const findPassengerBooking = (rideId, passengerId) => {
   return db
     .prepare(
       `
@@ -143,10 +84,7 @@ const findPassengerBooking = (
       LIMIT 1
       `,
     )
-    .get(
-      rideId,
-      passengerId,
-    );
+    .get(rideId, passengerId);
 };
 
 /*
@@ -170,94 +108,70 @@ const findPassengerBooking = (
  *   is blocked.
  */
 
-router.post(
-  "/",
-  authenticateToken,
-  (req, res) => {
-    try {
-      const reviewer =
-        getActiveUser(
-          req.user.id,
-        );
+router.post("/", authenticateToken, (req, res) => {
+  try {
+    const reviewer = req.user;
 
-      /*
-       * -----------------------------------------------------
-       * Parse request input
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Parse request input
+     * -----------------------------------------------------
+     */
 
-      const rideId =
-        parsePositiveInteger(
-          req.body.ride_id,
-        );
+    const rideId = parsePositiveInteger(req.body.ride_id);
 
-      const revieweeId =
-        parsePositiveInteger(
-          req.body.reviewee_id,
-        );
+    const revieweeId = parsePositiveInteger(req.body.reviewee_id);
 
-      const rating =
-        parseRating(
-          req.body.rating,
-        );
+    const rating = parseRating(req.body.rating);
 
-      const comment =
-        normalizeComment(
-          req.body.comment,
-        );
+    const comment = normalizeComment(req.body.comment);
 
-      /*
-       * -----------------------------------------------------
-       * Basic validation
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Basic validation
+     * -----------------------------------------------------
+     */
 
-      if (!rideId || !revieweeId) {
-        return res.status(400).json({
-          error:
-            "Valid ride ID and reviewee ID are required.",
-        });
-      }
+    if (!rideId || !revieweeId) {
+      return res.status(400).json({
+        error: "Valid ride ID and reviewee ID are required.",
+      });
+    }
 
-      if (!rating) {
-        return res.status(400).json({
-          error:
-            "Rating must be between 1 and 5 stars.",
-        });
-      }
+    if (!rating) {
+      return res.status(400).json({
+        error: "Rating must be between 1 and 5 stars.",
+      });
+    }
 
-      if (comment === null) {
-        return res.status(400).json({
-          error:
-            "Review comment must be a string with a maximum of 1000 characters.",
-        });
-      }
+    if (comment === null) {
+      return res.status(400).json({
+        error:
+          "Review comment must be a string with a maximum of 1000 characters.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Prevent self-review
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Prevent self-review
+     * -----------------------------------------------------
+     */
 
-      if (
-        Number(reviewer.id) ===
-        Number(revieweeId)
-      ) {
-        return res.status(400).json({
-          error:
-            "You cannot submit a review for yourself.",
-        });
-      }
+    if (Number(reviewer.id) === Number(revieweeId)) {
+      return res.status(400).json({
+        error: "You cannot submit a review for yourself.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Find ride
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Find ride
+     * -----------------------------------------------------
+     */
 
-      const ride = db
-        .prepare(
-          `
+    const ride = db
+      .prepare(
+        `
           SELECT
             id,
             driver_id,
@@ -266,91 +180,64 @@ router.post(
           WHERE id = ?
           LIMIT 1
           `,
-        )
-        .get(rideId);
+      )
+      .get(rideId);
 
-      if (!ride) {
-        return res.status(404).json({
-          error:
-            "Ride not found.",
-        });
-      }
+    if (!ride) {
+      return res.status(404).json({
+        error: "Ride not found.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Determine reviewer participation
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Determine reviewer participation
+     * -----------------------------------------------------
+     */
 
-      const isDriver =
-        Number(ride.driver_id) ===
-        Number(reviewer.id);
+    const isDriver = Number(ride.driver_id) === Number(reviewer.id);
 
-      const passengerBooking =
-        findPassengerBooking(
-          rideId,
-          reviewer.id,
-        );
+    const passengerBooking = findPassengerBooking(rideId, reviewer.id);
 
-      const isPassenger =
-        Boolean(
-          passengerBooking,
-        );
+    const isPassenger = Boolean(passengerBooking);
 
-      /*
-       * Reviewer must belong to the ride.
-       */
-      if (
-        !isDriver &&
-        !isPassenger
-      ) {
-        return res.status(403).json({
-          error:
-            "Only the ride driver or a passenger who booked this ride can submit a review.",
-        });
-      }
+    /*
+     * Reviewer must belong to the ride.
+     */
+    if (!isDriver && !isPassenger) {
+      return res.status(403).json({
+        error:
+          "Only the ride driver or a passenger who booked this ride can submit a review.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Verify reviewee participation
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Verify reviewee participation
+     * -----------------------------------------------------
+     */
 
-      const revieweeIsDriver =
-        Number(ride.driver_id) ===
-        Number(revieweeId);
+    const revieweeIsDriver = Number(ride.driver_id) === Number(revieweeId);
 
-      const revieweePassenger =
-        findPassengerBooking(
-          rideId,
-          revieweeId,
-        );
+    const revieweePassenger = findPassengerBooking(rideId, revieweeId);
 
-      const revieweeIsPassenger =
-        Boolean(
-          revieweePassenger,
-        );
+    const revieweeIsPassenger = Boolean(revieweePassenger);
 
-      if (
-        !revieweeIsDriver &&
-        !revieweeIsPassenger
-      ) {
-        return res.status(403).json({
-          error:
-            "The selected user did not participate in this ride.",
-        });
-      }
+    if (!revieweeIsDriver && !revieweeIsPassenger) {
+      return res.status(403).json({
+        error: "The selected user did not participate in this ride.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Prevent duplicate review
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Prevent duplicate review
+     * -----------------------------------------------------
+     */
 
-      const duplicateReview =
-        db
-          .prepare(
-            `
+    const duplicateReview = db
+      .prepare(
+        `
             SELECT
               id
             FROM reviews
@@ -360,29 +247,24 @@ router.post(
               AND reviewee_id = ?
             LIMIT 1
             `,
-          )
-          .get(
-            rideId,
-            reviewer.id,
-            revieweeId,
-          );
+      )
+      .get(rideId, reviewer.id, revieweeId);
 
-      if (duplicateReview) {
-        return res.status(409).json({
-          error:
-            "You have already reviewed this user for this ride.",
-        });
-      }
+    if (duplicateReview) {
+      return res.status(409).json({
+        error: "You have already reviewed this user for this ride.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Create review
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Create review
+     * -----------------------------------------------------
+     */
 
-      const result = db
-        .prepare(
-          `
+    const result = db
+      .prepare(
+        `
           INSERT INTO reviews (
             ride_id,
             reviewer_id,
@@ -392,40 +274,23 @@ router.post(
           )
           VALUES (?, ?, ?, ?, ?)
           `,
-        )
-        .run(
-          rideId,
-          reviewer.id,
-          revieweeId,
-          rating,
-          comment,
-        );
+      )
+      .run(rideId, reviewer.id, revieweeId, rating, comment);
 
-      return res.status(201).json({
-        message:
-          "Review submitted successfully!",
-        reviewId:
-          result.lastInsertRowid,
-      });
-    } catch (error) {
-      console.error(
-        "Review submit error:",
-        error,
-      );
+    return res.status(201).json({
+      message: "Review submitted successfully!",
+      reviewId: result.lastInsertRowid,
+    });
+  } catch (error) {
+    console.error("Review submit error:", error);
 
-      const statusCode =
-        error.statusCode || 500;
+    const statusCode = error.statusCode || 500;
 
-      return res
-        .status(statusCode)
-        .json({
-          error:
-            error.message ||
-            "Failed to submit review.",
-        });
-    }
-  },
-);
+    return res.status(statusCode).json({
+      error: error.message || "Failed to submit review.",
+    });
+  }
+});
 
 /*
  * =========================================================
@@ -433,31 +298,25 @@ router.post(
  * =========================================================
  */
 
-router.get(
-  "/user/:userId",
-  (req, res) => {
-    try {
-      const userId =
-        parsePositiveInteger(
-          req.params.userId,
-        );
+router.get("/user/:userId", (req, res) => {
+  try {
+    const userId = parsePositiveInteger(req.params.userId);
 
-      if (!userId) {
-        return res.status(400).json({
-          error:
-            "Invalid user ID.",
-        });
-      }
+    if (!userId) {
+      return res.status(400).json({
+        error: "Invalid user ID.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Verify target user exists
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Verify target user exists
+     * -----------------------------------------------------
+     */
 
-      const user = db
-        .prepare(
-          `
+    const user = db
+      .prepare(
+        `
           SELECT
             id,
             name,
@@ -467,43 +326,42 @@ router.get(
           WHERE id = ?
           LIMIT 1
           `,
-        )
-        .get(userId);
+      )
+      .get(userId);
 
-      if (!user) {
-        return res.status(404).json({
-          error:
-            "User not found.",
-        });
-      }
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found.",
+      });
+    }
 
-      /*
-       * -----------------------------------------------------
-       * Aggregate rating statistics
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Aggregate rating statistics
+     * -----------------------------------------------------
+     */
 
-      const stats = db
-        .prepare(
-          `
+    const stats = db
+      .prepare(
+        `
           SELECT
             AVG(rating) AS avg_rating,
             COUNT(*) AS review_count
           FROM reviews
           WHERE reviewee_id = ?
           `,
-        )
-        .get(userId);
+      )
+      .get(userId);
 
-      /*
-       * -----------------------------------------------------
-       * Fetch reviews
-       * -----------------------------------------------------
-       */
+    /*
+     * -----------------------------------------------------
+     * Fetch reviews
+     * -----------------------------------------------------
+     */
 
-      const reviews = db
-        .prepare(
-          `
+    const reviews = db
+      .prepare(
+        `
           SELECT
             r.id,
             r.ride_id,
@@ -521,50 +379,33 @@ router.get(
           ORDER BY
             r.created_at DESC
           `,
-        )
-        .all(userId);
+      )
+      .all(userId);
 
-      return res.status(200).json({
-        user: {
-          id: user.id,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
-        },
+    return res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+      },
 
-        avgRating:
-          stats?.avg_rating !==
-            null &&
-          stats?.avg_rating !==
-            undefined
-            ? Number(
-                Number(
-                  stats.avg_rating,
-                ).toFixed(2),
-              )
-            : 5.0,
+      avgRating:
+        stats?.avg_rating !== null && stats?.avg_rating !== undefined
+          ? Number(Number(stats.avg_rating).toFixed(2))
+          : 5.0,
 
-        reviewCount:
-          Number(
-            stats?.review_count ||
-              0,
-          ),
+      reviewCount: Number(stats?.review_count || 0),
 
-        reviews:
-          reviews || [],
-      });
-    } catch (error) {
-      console.error(
-        "Get reviews error:",
-        error,
-      );
+      reviews: reviews || [],
+    });
+  } catch (error) {
+    console.error("Get reviews error:", error);
 
-      return res.status(500).json({
-        error:
-          "Failed to fetch user reviews.",
-      });
-    }
-  },
-);
+    return res.status(500).json({
+      error: "Failed to fetch user reviews.",
+    });
+  }
+});
 
 module.exports = router;
