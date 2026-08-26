@@ -6,6 +6,7 @@ on:
       - main
       - dinitha
       - "feature/**"
+
   pull_request:
     branches:
       - main
@@ -49,3 +50,19 @@ jobs:
 
       - name: Run backend tests with coverage
         run: npm run test:coverage
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs:
+      - backend-test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build production Docker image
+        run: docker build -t icbt-carpool:ci .
+
+      - name: Verify Docker image exists
+        run: docker image inspect icbt-carpool:ci
