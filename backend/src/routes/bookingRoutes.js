@@ -65,7 +65,11 @@ const isValidPaymentMethod = (value) => {
     return false;
   }
 
-  return ALLOWED_PAYMENT_METHODS.includes(value.trim());
+  const normalizedValue = value.trim().toLowerCase();
+
+  return ALLOWED_PAYMENT_METHODS.some(
+    (method) => method.toLowerCase() === normalizedValue,
+  );
 };
 
 const getCurrentUser = (userId) => {

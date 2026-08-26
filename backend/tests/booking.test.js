@@ -61,34 +61,28 @@ describe("Booking API Tests", () => {
   }
 
   before(async () => {
-    const driverLogin = await request(app)
-      .post("/api/auth/login")
-      .send({
-        email: "kamal.driver@icbt.edu.lk",
-        password: "driver123",
-      });
+    const driverLogin = await request(app).post("/api/auth/login").send({
+      email: "kamal.driver@icbt.edu.lk",
+      password: "driver123",
+    });
 
     assert.equal(driverLogin.status, 200);
     assert.ok(driverLogin.body.token);
     driverToken = driverLogin.body.token;
 
-    const passengerLogin = await request(app)
-      .post("/api/auth/login")
-      .send({
-        email: "nimal.student@icbt.edu.lk",
-        password: "student123",
-      });
+    const passengerLogin = await request(app).post("/api/auth/login").send({
+      email: "nimal.student@icbt.edu.lk",
+      password: "student123",
+    });
 
     assert.equal(passengerLogin.status, 200);
     assert.ok(passengerLogin.body.token);
     passengerToken = passengerLogin.body.token;
 
-    const adminLogin = await request(app)
-      .post("/api/admin/auth/login")
-      .send({
-        email: "admin@icbt.edu.lk",
-        password: "admin123",
-      });
+    const adminLogin = await request(app).post("/api/admin/auth/login").send({
+      email: "admin@icbt.edu.lk",
+      password: "admin123",
+    });
 
     assert.equal(adminLogin.status, 200);
     assert.ok(adminLogin.body.token);
@@ -100,8 +94,7 @@ describe("Booking API Tests", () => {
   // =========================================================
 
   it("Rejects unauthenticated access to my bookings", async () => {
-    const res = await request(app)
-      .get("/api/bookings/my-bookings");
+    const res = await request(app).get("/api/bookings/my-bookings");
 
     assert.equal(res.status, 401);
   });
@@ -117,11 +110,7 @@ describe("Booking API Tests", () => {
     assert.equal(res.status, 200);
     assert.ok(Array.isArray(res.body.bookings));
 
-    assert.ok(
-      res.body.bookings.some(
-        (booking) => booking.id === bookingId,
-      ),
-    );
+    assert.ok(res.body.bookings.some((booking) => booking.id === bookingId));
   });
 
   // =========================================================
@@ -139,11 +128,7 @@ describe("Booking API Tests", () => {
     assert.equal(res.status, 200);
     assert.ok(Array.isArray(res.body.bookings));
 
-    assert.ok(
-      res.body.bookings.some(
-        (booking) => booking.id === bookingId,
-      ),
-    );
+    assert.ok(res.body.bookings.some((booking) => booking.id === bookingId));
   });
 
   // =========================================================
@@ -322,10 +307,7 @@ describe("Booking API Tests", () => {
       });
 
     assert.equal(res.status, 400);
-    assert.match(
-      res.body.error,
-      /Only confirmed bookings can be completed/i,
-    );
+    assert.match(res.body.error, /Only confirmed bookings can be completed/i);
   });
 
   it("Rejects an invalid payment method", async () => {
@@ -349,10 +331,7 @@ describe("Booking API Tests", () => {
       });
 
     assert.equal(res.status, 400);
-    assert.match(
-      res.body.error,
-      /Invalid payment method/i,
-    );
+    assert.match(res.body.error, /Invalid payment method/i);
   });
 
   it("Rejects an incorrect custom payment amount", async () => {
@@ -377,10 +356,7 @@ describe("Booking API Tests", () => {
       });
 
     assert.equal(res.status, 400);
-    assert.match(
-      res.body.error,
-      /does not match the booking fare/i,
-    );
+    assert.match(res.body.error, /does not match the booking fare/i);
   });
 
   it("Driver can confirm payment for a confirmed booking", async () => {
@@ -441,6 +417,29 @@ describe("Booking API Tests", () => {
       });
 
     assert.equal(duplicate.status, 400);
+
+    it("Accepts payment methods case-insensitively", async () => {
+      const rideId = await createRide();
+      const bookingId = await createBooking(rideId);
+
+      const confirm = await request(app)
+        .patch(`/api/bookings/${bookingId}/status`)
+        .set("Authorization", `Bearer ${driverToken}`)
+        .send({
+          status: "confirmed",
+        });
+
+      assert.equal(confirm.status, 200);
+
+      const payment = await request(app)
+        .patch(`/api/bookings/${bookingId}/confirm-payment`)
+        .set("Authorization", `Bearer ${driverToken}`)
+        .send({
+          paymentMethod: "cash payment",
+        });
+
+      assert.equal(payment.status, 200);
+    });
 
     // After the first payment the booking status becomes "completed",
     // so the endpoint reaches the status validation before the
