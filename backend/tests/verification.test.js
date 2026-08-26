@@ -21,53 +21,42 @@ describe("Driver & Passenger Verification API Tests", () => {
       .slice(2, 8)}@icbt.edu.lk`;
 
   const uniqueStudentStaffId = () =>
-    `VER-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 7)}`;
+    `VER-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   // =========================================================
   // SETUP
   // =========================================================
 
   before(async () => {
-    const driverLogin = await request(app)
-      .post("/api/auth/login")
-      .send({
-        email: "kamal.driver@icbt.edu.lk",
-        password: "driver123",
-      });
+    const driverLogin = await request(app).post("/api/auth/login").send({
+      email: "kamal.driver@icbt.edu.lk",
+      password: "driver123",
+    });
 
     assert.equal(
       driverLogin.status,
       200,
-      `Driver login failed: ${JSON.stringify(
-        driverLogin.body,
-      )}`,
+      `Driver login failed: ${JSON.stringify(driverLogin.body)}`,
     );
 
     assert.ok(driverLogin.body.token);
 
     driverToken = driverLogin.body.token;
 
-    const passengerLogin = await request(app)
-      .post("/api/auth/login")
-      .send({
-        email: "nimal.student@icbt.edu.lk",
-        password: "student123",
-      });
+    const passengerLogin = await request(app).post("/api/auth/login").send({
+      email: "nimal.student@icbt.edu.lk",
+      password: "student123",
+    });
 
     assert.equal(
       passengerLogin.status,
       200,
-      `Passenger login failed: ${JSON.stringify(
-        passengerLogin.body,
-      )}`,
+      `Passenger login failed: ${JSON.stringify(passengerLogin.body)}`,
     );
 
     assert.ok(passengerLogin.body.token);
 
-    passengerToken =
-      passengerLogin.body.token;
+    passengerToken = passengerLogin.body.token;
 
     // -------------------------------------------------------
     // Create a fresh user for testing a NEW driver
@@ -81,23 +70,19 @@ describe("Driver & Passenger Verification API Tests", () => {
         email: uniqueEmail("driver"),
         password: "test123",
         role: "student",
-        student_staff_id:
-          uniqueStudentStaffId(),
+        student_staff_id: uniqueStudentStaffId(),
         phone: "0710000001",
       });
 
     assert.equal(
       newDriver.status,
       201,
-      `Test driver creation failed: ${JSON.stringify(
-        newDriver.body,
-      )}`,
+      `Test driver creation failed: ${JSON.stringify(newDriver.body)}`,
     );
 
     assert.ok(newDriver.body.token);
 
-    createdDriverUserToken =
-      newDriver.body.token;
+    createdDriverUserToken = newDriver.body.token;
 
     // -------------------------------------------------------
     // Create a fresh user for testing a NEW passenger
@@ -111,23 +96,19 @@ describe("Driver & Passenger Verification API Tests", () => {
         email: uniqueEmail("passenger"),
         password: "test123",
         role: "student",
-        student_staff_id:
-          uniqueStudentStaffId(),
+        student_staff_id: uniqueStudentStaffId(),
         phone: "0710000002",
       });
 
     assert.equal(
       newPassenger.status,
       201,
-      `Test passenger creation failed: ${JSON.stringify(
-        newPassenger.body,
-      )}`,
+      `Test passenger creation failed: ${JSON.stringify(newPassenger.body)}`,
     );
 
     assert.ok(newPassenger.body.token);
 
-    createdPassengerUserToken =
-      newPassenger.body.token;
+    createdPassengerUserToken = newPassenger.body.token;
   });
 
   // =========================================================
@@ -135,15 +116,13 @@ describe("Driver & Passenger Verification API Tests", () => {
   // =========================================================
 
   it("Rejects driver verification submission without authentication", async () => {
-    const res = await request(app)
-      .post("/api/verification/driver")
-      .send({
-        license_number: "B1234567",
-        vehicle_model: "Toyota Prius",
-        vehicle_plate: "WP-CAB-4521",
-        seats: 4,
-        fuel_type: "Hybrid",
-      });
+    const res = await request(app).post("/api/verification/driver").send({
+      license_number: "B1234567",
+      vehicle_model: "Toyota Prius",
+      vehicle_plate: "WP-CAB-4521",
+      seats: 4,
+      fuel_type: "Hybrid",
+    });
 
     assert.equal(res.status, 401);
   });
@@ -151,10 +130,7 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects driver verification with missing required fields", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "",
         vehicle_model: "Toyota Prius",
@@ -172,10 +148,7 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects driver verification with an overly long license number", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "A".repeat(101),
         vehicle_model: "Toyota Prius",
@@ -190,10 +163,7 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects driver verification with an overly long vehicle model", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "A".repeat(101),
@@ -208,10 +178,7 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects driver verification with an overly long vehicle plate", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
@@ -226,10 +193,7 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects invalid seat count below minimum", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
@@ -240,19 +204,13 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     assert.equal(res.status, 400);
 
-    assert.match(
-      res.body.error,
-      /between 1 and 12/i,
-    );
+    assert.match(res.body.error, /between 1 and 12/i);
   });
 
   it("Rejects invalid seat count above maximum", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
@@ -263,19 +221,13 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     assert.equal(res.status, 400);
 
-    assert.match(
-      res.body.error,
-      /between 1 and 12/i,
-    );
+    assert.match(res.body.error, /between 1 and 12/i);
   });
 
   it("Uses the default seat count when seats are omitted", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
@@ -286,28 +238,18 @@ describe("Driver & Passenger Verification API Tests", () => {
     assert.equal(
       res.status,
       200,
-      `Unexpected response: ${JSON.stringify(
-        res.body,
-      )}`,
+      `Unexpected response: ${JSON.stringify(res.body)}`,
     );
 
-    assert.ok(
-      res.body.driver_verification,
-    );
+    assert.ok(res.body.driver_verification);
 
-    assert.equal(
-      res.body.driver_verification.seats,
-      3,
-    );
+    assert.equal(res.body.driver_verification.seats, 3);
   });
 
   it("Uses Petrol as the default fuel type", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
@@ -317,19 +259,13 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     assert.equal(res.status, 200);
 
-    assert.equal(
-      res.body.driver_verification.fuel_type,
-      "Petrol",
-    );
+    assert.equal(res.body.driver_verification.fuel_type, "Petrol");
   });
 
   it("Rejects invalid fuel type", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
@@ -340,54 +276,38 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     assert.equal(res.status, 400);
 
-    assert.match(
-      res.body.error,
-      /Invalid fuel type/i,
-    );
+    assert.match(res.body.error, /Invalid fuel type/i);
   });
 
   it("Rejects invalid document URL", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
         vehicle_plate: "WP-CAB-4526",
         seats: 4,
         fuel_type: "Hybrid",
-        license_doc_url:
-          "javascript:alert(1)",
+        license_doc_url: "javascript:alert(1)",
       });
 
     assert.equal(res.status, 400);
 
-    assert.match(
-      res.body.error,
-      /valid HTTP\/HTTPS URLs/i,
-    );
+    assert.match(res.body.error, /valid HTTP\/HTTPS URLs/i);
   });
 
   it("Rejects an overly long document URL", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
         vehicle_plate: "WP-CAB-4527",
         seats: 4,
         fuel_type: "Hybrid",
-        license_doc_url:
-          `https://example.com/${"a".repeat(
-            1001,
-          )}`,
+        license_doc_url: `https://example.com/${"a".repeat(1001)}`,
       });
 
     assert.equal(res.status, 400);
@@ -396,70 +316,42 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Accepts a valid driver verification submission", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B1234567",
         vehicle_model: "Toyota Prius",
         vehicle_plate: "WP-CAB-4528",
         seats: 4,
         fuel_type: "Hybrid",
-        license_doc_url:
-          "https://example.com/license.pdf",
-        vehicle_photo_url:
-          "https://example.com/car.jpg",
+        license_doc_url: "https://example.com/license.pdf",
+        vehicle_photo_url: "https://example.com/car.jpg",
       });
 
     assert.equal(
       res.status,
       200,
-      `Unexpected response: ${JSON.stringify(
-        res.body,
-      )}`,
+      `Unexpected response: ${JSON.stringify(res.body)}`,
     );
 
-    assert.ok(
-      res.body.driver_verification,
-    );
+    assert.ok(res.body.driver_verification);
 
-    driverVerificationId =
-      res.body.driver_verification.id;
+    driverVerificationId = res.body.driver_verification.id;
 
-    assert.equal(
-      res.body.driver_verification.status,
-      "pending",
-    );
+    assert.equal(res.body.driver_verification.status, "pending");
 
-    assert.equal(
-      res.body.driver_verification.seats,
-      4,
-    );
+    assert.equal(res.body.driver_verification.seats, 4);
 
-    assert.equal(
-      res.body.driver_verification.fuel_type,
-      "Hybrid",
-    );
+    assert.equal(res.body.driver_verification.fuel_type, "Hybrid");
 
-    assert.equal(
-      res.body.driver_verification.vehicle_plate,
-      "WP-CAB-4528",
-    );
+    assert.equal(res.body.driver_verification.vehicle_plate, "WP-CAB-4528");
 
-    assert.equal(
-      res.body.driver_verification.odd_even_type,
-      "EVEN",
-    );
+    assert.equal(res.body.driver_verification.odd_even_type, "EVEN");
   });
 
   it("Calculates ODD vehicle classification from the plate number", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B7654321",
         vehicle_model: "Honda Fit",
@@ -470,19 +362,13 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     assert.equal(res.status, 200);
 
-    assert.equal(
-      res.body.driver_verification.odd_even_type,
-      "ODD",
-    );
+    assert.equal(res.body.driver_verification.odd_even_type, "ODD");
   });
 
   it("Uses safe default document URLs when document URLs are omitted", async () => {
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "B7654322",
         vehicle_model: "Honda Fit",
@@ -493,27 +379,13 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     assert.equal(res.status, 200);
 
-    assert.ok(
-      res.body.driver_verification
-        .license_doc_url,
-    );
+    assert.ok(res.body.driver_verification.license_doc_url);
 
-    assert.ok(
-      res.body.driver_verification
-        .vehicle_photo_url,
-    );
+    assert.ok(res.body.driver_verification.vehicle_photo_url);
 
-    assert.match(
-      res.body.driver_verification
-        .license_doc_url,
-      /^https:\/\//,
-    );
+    assert.match(res.body.driver_verification.license_doc_url, /^https:\/\//);
 
-    assert.match(
-      res.body.driver_verification
-        .vehicle_photo_url,
-      /^https:\/\//,
-    );
+    assert.match(res.body.driver_verification.vehicle_photo_url, /^https:\/\//);
   });
 
   it("Updates an existing driver verification application", async () => {
@@ -524,64 +396,36 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
       .send({
         license_number: "UPDATED-999",
         vehicle_model: "Toyota Aqua",
         vehicle_plate: "WP-CAB-4529",
         seats: 5,
         fuel_type: "Electric",
-        license_doc_url:
-          "https://example.com/updated-license.pdf",
-        vehicle_photo_url:
-          "https://example.com/updated-car.jpg",
+        license_doc_url: "https://example.com/updated-license.pdf",
+        vehicle_photo_url: "https://example.com/updated-car.jpg",
       });
 
     assert.equal(
       res.status,
       200,
-      `Unexpected response: ${JSON.stringify(
-        res.body,
-      )}`,
+      `Unexpected response: ${JSON.stringify(res.body)}`,
     );
 
-    assert.equal(
-      res.body.driver_verification.id,
-      driverVerificationId,
-    );
+    assert.equal(res.body.driver_verification.id, driverVerificationId);
 
-    assert.equal(
-      res.body.driver_verification.status,
-      "pending",
-    );
+    assert.equal(res.body.driver_verification.status, "pending");
 
-    assert.equal(
-      res.body.driver_verification.license_number,
-      "UPDATED-999",
-    );
+    assert.equal(res.body.driver_verification.license_number, "UPDATED-999");
 
-    assert.equal(
-      res.body.driver_verification.vehicle_model,
-      "Toyota Aqua",
-    );
+    assert.equal(res.body.driver_verification.vehicle_model, "Toyota Aqua");
 
-    assert.equal(
-      res.body.driver_verification.vehicle_plate,
-      "WP-CAB-4529",
-    );
+    assert.equal(res.body.driver_verification.vehicle_plate, "WP-CAB-4529");
 
-    assert.equal(
-      res.body.driver_verification.seats,
-      5,
-    );
+    assert.equal(res.body.driver_verification.seats, 5);
 
-    assert.equal(
-      res.body.driver_verification.fuel_type,
-      "Electric",
-    );
+    assert.equal(res.body.driver_verification.fuel_type, "Electric");
 
     assert.equal(
       res.body.driver_verification.admin_comment,
@@ -596,22 +440,13 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Returns current driver verification status", async () => {
     const res = await request(app)
       .get("/api/verification/driver/status")
-      .set(
-        "Authorization",
-        `Bearer ${createdDriverUserToken}`,
-      );
+      .set("Authorization", `Bearer ${createdDriverUserToken}`);
 
     assert.equal(res.status, 200);
 
-    assert.equal(
-      res.body.status,
-      "pending",
-    );
+    assert.equal(res.body.status, "pending");
 
-    assert.equal(
-      res.body.verified,
-      false,
-    );
+    assert.equal(res.body.verified, false);
 
     assert.ok(res.body.details);
   });
@@ -619,27 +454,30 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Returns unverified status for a user without a driver verification record", async () => {
     const res = await request(app)
       .get("/api/verification/driver/status")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      );
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`);
 
     assert.equal(res.status, 200);
 
-    assert.equal(
-      res.body.status,
-      "unverified",
-    );
+    assert.equal(res.body.status, "unverified");
 
-    assert.equal(
-      res.body.verified,
-      false,
-    );
+    assert.equal(res.body.verified, false);
 
-    assert.equal(
-      res.body.details,
-      null,
-    );
+    assert.equal(res.body.details, null);
+  });
+
+  it("Accepts fuel types case-insensitively", async () => {
+    const res = await request(app)
+      .post("/api/verification/driver")
+      .set("Authorization", `Bearer ${createdDriverUserToken}`)
+      .send({
+        license_number: "B7654321",
+        vehicle_model: "Toyota Prius",
+        vehicle_plate: "WP-CAB-4522",
+        seats: 4,
+        fuel_type: "hybrid",
+      });
+
+    assert.equal(res.status, 200);
   });
 
   // =========================================================
@@ -647,11 +485,9 @@ describe("Driver & Passenger Verification API Tests", () => {
   // =========================================================
 
   it("Rejects passenger verification submission without authentication", async () => {
-    const res = await request(app)
-      .post("/api/verification/passenger")
-      .send({
-        id_card_number: "ICBT-STU-1001",
-      });
+    const res = await request(app).post("/api/verification/passenger").send({
+      id_card_number: "ICBT-STU-1001",
+    });
 
     assert.equal(res.status, 401);
   });
@@ -659,13 +495,9 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects passenger verification with missing ID card number", async () => {
     const res = await request(app)
       .post("/api/verification/passenger")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`)
       .send({
-        id_doc_url:
-          "https://example.com/id.pdf",
+        id_doc_url: "https://example.com/id.pdf",
       });
 
     assert.equal(res.status, 400);
@@ -679,10 +511,7 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects passenger verification with an empty ID card number", async () => {
     const res = await request(app)
       .post("/api/verification/passenger")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`)
       .send({
         id_card_number: "   ",
       });
@@ -693,13 +522,9 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects an overly long passenger ID card number", async () => {
     const res = await request(app)
       .post("/api/verification/passenger")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`)
       .send({
-        id_card_number:
-          "A".repeat(101),
+        id_card_number: "A".repeat(101),
       });
 
     assert.equal(res.status, 400);
@@ -708,14 +533,10 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Rejects an invalid passenger document URL", async () => {
     const res = await request(app)
       .post("/api/verification/passenger")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`)
       .send({
         id_card_number: "ICBT-STU-1002",
-        id_doc_url:
-          "javascript:alert(1)",
+        id_doc_url: "javascript:alert(1)",
       });
 
     assert.equal(res.status, 400);
@@ -729,40 +550,25 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Accepts a valid passenger verification submission", async () => {
     const res = await request(app)
       .post("/api/verification/passenger")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`)
       .send({
         id_card_number: "ICBT-STU-1003",
-        id_doc_url:
-          "https://example.com/id-card.pdf",
+        id_doc_url: "https://example.com/id-card.pdf",
       });
 
     assert.equal(
       res.status,
       200,
-      `Unexpected response: ${JSON.stringify(
-        res.body,
-      )}`,
+      `Unexpected response: ${JSON.stringify(res.body)}`,
     );
 
-    assert.equal(
-      res.body.message,
-      "Passenger verified successfully.",
-    );
+    assert.equal(res.body.message, "Passenger verified successfully.");
 
-    assert.ok(
-      res.body.passenger_verification,
-    );
+    assert.ok(res.body.passenger_verification);
 
-    passengerVerificationId =
-      res.body.passenger_verification.id;
+    passengerVerificationId = res.body.passenger_verification.id;
 
-    assert.equal(
-      res.body.passenger_verification.status,
-      "approved",
-    );
+    assert.equal(res.body.passenger_verification.status, "approved");
 
     assert.equal(
       res.body.passenger_verification.id_card_number,
@@ -773,32 +579,20 @@ describe("Driver & Passenger Verification API Tests", () => {
   it("Allows passenger verification submission without a document URL", async () => {
     const res = await request(app)
       .post("/api/verification/passenger")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`)
       .send({
-        id_card_number:
-          "ICBT-STU-1004",
+        id_card_number: "ICBT-STU-1004",
       });
 
     assert.equal(
       res.status,
       200,
-      `Unexpected response: ${JSON.stringify(
-        res.body,
-      )}`,
+      `Unexpected response: ${JSON.stringify(res.body)}`,
     );
 
-    assert.equal(
-      res.body.passenger_verification.status,
-      "approved",
-    );
+    assert.equal(res.body.passenger_verification.status, "approved");
 
-    assert.equal(
-      res.body.passenger_verification.id_doc_url,
-      "",
-    );
+    assert.equal(res.body.passenger_verification.id_doc_url, "");
   });
 
   it("Updates an existing passenger verification", async () => {
@@ -809,34 +603,21 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     const res = await request(app)
       .post("/api/verification/passenger")
-      .set(
-        "Authorization",
-        `Bearer ${createdPassengerUserToken}`,
-      )
+      .set("Authorization", `Bearer ${createdPassengerUserToken}`)
       .send({
-        id_card_number:
-          "UPDATED-STU-999",
-        id_doc_url:
-          "https://example.com/updated-id.pdf",
+        id_card_number: "UPDATED-STU-999",
+        id_doc_url: "https://example.com/updated-id.pdf",
       });
 
     assert.equal(
       res.status,
       200,
-      `Unexpected response: ${JSON.stringify(
-        res.body,
-      )}`,
+      `Unexpected response: ${JSON.stringify(res.body)}`,
     );
 
-    assert.equal(
-      res.body.passenger_verification.id,
-      passengerVerificationId,
-    );
+    assert.equal(res.body.passenger_verification.id, passengerVerificationId);
 
-    assert.equal(
-      res.body.passenger_verification.status,
-      "approved",
-    );
+    assert.equal(res.body.passenger_verification.status, "approved");
 
     assert.equal(
       res.body.passenger_verification.id_card_number,
@@ -854,33 +635,25 @@ describe("Driver & Passenger Verification API Tests", () => {
   // =========================================================
 
   it("Rejects verification submission for a suspended user", async () => {
-    const email =
-      uniqueEmail("suspended");
+    const email = uniqueEmail("suspended");
 
-    const create = await request(app)
-      .post("/api/auth/register")
-      .send({
-        name: "Suspended Verification User",
-        email,
-        password: "test123",
-        role: "student",
-        student_staff_id:
-          uniqueStudentStaffId(),
-      });
+    const create = await request(app).post("/api/auth/register").send({
+      name: "Suspended Verification User",
+      email,
+      password: "test123",
+      role: "student",
+      student_staff_id: uniqueStudentStaffId(),
+    });
 
     assert.equal(
       create.status,
       201,
-      `Suspended user creation failed: ${JSON.stringify(
-        create.body,
-      )}`,
+      `Suspended user creation failed: ${JSON.stringify(create.body)}`,
     );
 
-    const token =
-      create.body.token;
+    const token = create.body.token;
 
-    const userId =
-      create.body.user.id;
+    const userId = create.body.user.id;
 
     db.prepare(
       `
@@ -892,10 +665,7 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     const res = await request(app)
       .post("/api/verification/driver")
-      .set(
-        "Authorization",
-        `Bearer ${token}`,
-      )
+      .set("Authorization", `Bearer ${token}`)
       .send({
         license_number: "SUSP-123",
         vehicle_model: "Honda Fit",
@@ -906,10 +676,7 @@ describe("Driver & Passenger Verification API Tests", () => {
 
     assert.equal(res.status, 403);
 
-    assert.match(
-      res.body.error,
-      /account has been suspended/i,
-    );
+    assert.match(res.body.error, /account has been suspended/i);
 
     // Restore test data.
     db.prepare(
@@ -926,19 +693,15 @@ describe("Driver & Passenger Verification API Tests", () => {
   // =========================================================
 
   it("Rejects unauthenticated driver verification status requests", async () => {
-    const res = await request(app)
-      .get("/api/verification/driver/status");
+    const res = await request(app).get("/api/verification/driver/status");
 
     assert.equal(res.status, 401);
   });
 
   it("Rejects unauthenticated passenger verification requests", async () => {
-    const res = await request(app)
-      .post("/api/verification/passenger")
-      .send({
-        id_card_number:
-          "ICBT-UNAUTH-001",
-      });
+    const res = await request(app).post("/api/verification/passenger").send({
+      id_card_number: "ICBT-UNAUTH-001",
+    });
 
     assert.equal(res.status, 401);
   });
