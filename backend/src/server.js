@@ -51,19 +51,9 @@ const corsOptions = {
     return callback(new Error(`CORS origin not allowed: ${origin}`));
   },
 
-  methods: [
-    "GET",
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE",
-    "OPTIONS",
-  ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-  ],
+  allowedHeaders: ["Content-Type", "Authorization"],
 
   credentials: false,
 };
@@ -238,16 +228,35 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-/* =========================================================
-   SPA FALLBACK
-   ========================================================= */
+/*
+ * =========================================================
+ * API 404 HANDLER
+ * =========================================================
+ *
+ * Any unknown /api/* endpoint must return a JSON 404.
+ * It must not fall through to the frontend SPA.
+ */
+app.use("/api", (req, res) => {
+  return res.status(404).json({
+    error: "API endpoint not found.",
+  });
+});
 
+/*
+ * =========================================================
+ * SPA FALLBACK
+ * =========================================================
+ *
+ * Non-API browser routes are handled by the frontend.
+ */
 app.get("*", (req, res) => {
   const indexFile = path.join(publicDir, "index.html");
 
-  res.sendFile(indexFile, (err) => {
-    if (err) {
-      res.status(200).send("ICBT Carpool REST API Online");
+  res.sendFile(indexFile, (error) => {
+    if (error) {
+      console.error("SPA fallback error:", error);
+
+      return res.status(500).send("Frontend application unavailable.");
     }
   });
 });
@@ -259,8 +268,7 @@ app.get("*", (req, res) => {
 io.use((socket, next) => {
   try {
     const authHeader =
-      socket.handshake.auth?.token ||
-      socket.handshake.headers?.authorization;
+      socket.handshake.auth?.token || socket.handshake.headers?.authorization;
 
     const token =
       authHeader && authHeader.startsWith("Bearer ")
@@ -317,9 +325,7 @@ io.on("connection", (socket) => {
   console.log(
     "⚡ Socket connected:",
     socket.id,
-    authUser
-      ? `(User: ${authUser.name} #${authUser.id})`
-      : "(Anonymous)",
+    authUser ? `(User: ${authUser.name} #${authUser.id})` : "(Anonymous)",
   );
 
   /* =======================================================
@@ -341,8 +347,7 @@ io.on("connection", (socket) => {
   socket.on("join_ride_room", ({ rideId }) => {
     if (!socket.user) {
       socket.emit("chat_error", {
-        message:
-          "Authentication required. Please log in to join chat.",
+        message: "Authentication required. Please log in to join chat.",
       });
 
       return;
@@ -389,8 +394,7 @@ io.on("connection", (socket) => {
     try {
       if (!socket.user) {
         socket.emit("chat_error", {
-          message:
-            "Authentication required to send messages.",
+          message: "Authentication required to send messages.",
         });
 
         return;
@@ -417,8 +421,7 @@ io.on("connection", (socket) => {
       const verifiedSenderId = socket.user.id;
       const verifiedSenderName = socket.user.name;
       const verifiedSenderAvatar = socket.user.avatar || "";
-      const verifiedSenderRole =
-        socket.user.role || "student";
+      const verifiedSenderRole = socket.user.role || "student";
 
       const result = db
         .prepare(
@@ -431,11 +434,7 @@ io.on("connection", (socket) => {
           VALUES (?, ?, ?)
           `,
         )
-        .run(
-          rideId,
-          verifiedSenderId,
-          text.trim(),
-        );
+        .run(rideId, verifiedSenderId, text.trim());
 
       const msg = {
         id: result.lastInsertRowid,
@@ -449,10 +448,7 @@ io.on("connection", (socket) => {
       };
 
       // Broadcast only to the authorized ride room.
-      io.to(`ride-${rideId}`).emit(
-        "new_message",
-        msg,
-      );
+      io.to(`ride-${rideId}`).emit("new_message", msg);
     } catch (err) {
       console.error("Socket message error:", err);
 
@@ -467,10 +463,7 @@ io.on("connection", (socket) => {
      ======================================================= */
 
   socket.on("disconnect", () => {
-    console.log(
-      "Socket disconnected:",
-      socket.id,
-    );
+    console.log("Socket disconnected:", socket.id);
   });
 });
 
@@ -482,19 +475,13 @@ const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
   server.listen(PORT, () => {
-    console.log(
-      `🚀 Carpool Server listening on port ${PORT}`,
-    );
+    console.log(`🚀 Carpool Server listening on port ${PORT}`);
 
-    console.log(
-      `📡 WebSocket server initialized`,
-    );
+    console.log(`📡 WebSocket server initialized`);
 
     console.log(
       `🌐 Allowed CORS origins: ${
-        allowedOrigins.length
-          ? allowedOrigins.join(", ")
-          : "NONE"
+        allowedOrigins.length ? allowedOrigins.join(", ") : "NONE"
       }`,
     );
   });
