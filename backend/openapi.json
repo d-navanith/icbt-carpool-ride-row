@@ -11,6 +11,10 @@
   },
   "servers": [
     {
+      "url": "https://icbt-carpool-ride-row-production.up.railway.app",
+      "description": "Production Server"
+    },
+    {
       "url": "http://localhost:5000",
       "description": "Local Development Server"
     }
@@ -31,11 +35,25 @@
           "id": { "type": "integer", "example": 3 },
           "name": { "type": "string", "example": "Nimal Silva" },
           "email": { "type": "string", "example": "nimal.student@icbt.edu.lk" },
-          "role": { "type": "string", "enum": ["student", "staff"], "example": "student" },
-          "system_role": { "type": "string", "enum": ["user", "admin"], "example": "user" },
-          "student_staff_id": { "type": "string", "example": "ICBT-ST-2024-42" },
+          "role": {
+            "type": "string",
+            "enum": ["student", "staff"],
+            "example": "student"
+          },
+          "system_role": {
+            "type": "string",
+            "enum": ["user", "admin"],
+            "example": "user"
+          },
+          "student_staff_id": {
+            "type": "string",
+            "example": "ICBT-ST-2024-42"
+          },
           "phone": { "type": "string", "example": "+94 76 998 1122" },
-          "avatar": { "type": "string", "example": "https://api.dicebear.com/7.x/bottts/svg?seed=Nimal" },
+          "avatar": {
+            "type": "string",
+            "example": "https://api.dicebear.com/7.x/bottts/svg?seed=Nimal"
+          },
           "created_at": { "type": "string", "format": "date-time" }
         }
       },
@@ -45,15 +63,33 @@
           "id": { "type": "integer", "example": 1 },
           "user_id": { "type": "integer", "example": 2 },
           "license_number": { "type": "string", "example": "B-9876543-LK" },
-          "vehicle_model": { "type": "string", "example": "Toyota Aqua (Hybrid)" },
+          "vehicle_model": {
+            "type": "string",
+            "example": "Toyota Aqua (Hybrid)"
+          },
           "vehicle_plate": { "type": "string", "example": "WP-CBH-4521" },
-          "odd_even_type": { "type": "string", "enum": ["ODD", "EVEN"], "example": "ODD" },
+          "odd_even_type": {
+            "type": "string",
+            "enum": ["ODD", "EVEN"],
+            "example": "ODD"
+          },
           "seats": { "type": "integer", "example": 4 },
-          "fuel_type": { "type": "string", "enum": ["Petrol", "Hybrid", "Electric", "Diesel"], "example": "Hybrid" },
+          "fuel_type": {
+            "type": "string",
+            "enum": ["Petrol", "Hybrid", "Electric", "Diesel"],
+            "example": "Hybrid"
+          },
           "license_doc_url": { "type": "string" },
           "vehicle_photo_url": { "type": "string" },
-          "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "example": "approved" },
-          "admin_comment": { "type": "string", "example": "Verified with ICBT Student registry" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"],
+            "example": "approved"
+          },
+          "admin_comment": {
+            "type": "string",
+            "example": "Verified with ICBT Student registry"
+          },
           "submitted_at": { "type": "string", "format": "date-time" },
           "reviewed_at": { "type": "string", "format": "date-time" }
         }
@@ -70,18 +106,39 @@
           "route_waypoints": {
             "type": "array",
             "items": { "type": "string" },
-            "example": ["Miriswatta", "Kiribathgoda", "Kelaniya", "Orugodawatta", "Bambalapitiya"]
+            "example": [
+              "Miriswatta",
+              "Kiribathgoda",
+              "Kelaniya",
+              "Orugodawatta",
+              "Bambalapitiya"
+            ]
           },
-          "departure_date": { "type": "string", "format": "date", "example": "2026-08-16" },
+          "departure_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-08-16"
+          },
           "departure_time": { "type": "string", "example": "07:15" },
           "return_time": { "type": "string", "example": "17:30" },
           "total_seats": { "type": "integer", "example": 4 },
           "available_seats": { "type": "integer", "example": 3 },
           "price_per_seat": { "type": "number", "example": 350 },
-          "vehicle_desc": { "type": "string", "example": "Toyota Aqua (AC / Hybrid) - Silver" },
-          "odd_even_tag": { "type": "string", "enum": ["ODD", "EVEN"], "example": "ODD" },
+          "vehicle_desc": {
+            "type": "string",
+            "example": "Toyota Aqua (AC / Hybrid) - Silver"
+          },
+          "odd_even_tag": {
+            "type": "string",
+            "enum": ["ODD", "EVEN"],
+            "example": "ODD"
+          },
           "notes": { "type": "string", "example": "Pickup along Kandy Road" },
-          "status": { "type": "string", "enum": ["active", "completed", "cancelled"], "example": "active" }
+          "status": {
+            "type": "string",
+            "enum": ["active", "completed", "cancelled"],
+            "example": "active"
+          }
         }
       },
       "Booking": {
@@ -91,9 +148,16 @@
           "ride_id": { "type": "integer", "example": 1 },
           "passenger_id": { "type": "integer", "example": 3 },
           "seats_booked": { "type": "integer", "example": 1 },
-          "pickup_location": { "type": "string", "example": "Kiribathgoda Junction" },
+          "pickup_location": {
+            "type": "string",
+            "example": "Kiribathgoda Junction"
+          },
           "booking_code": { "type": "string", "example": "BK-789234" },
-          "status": { "type": "string", "enum": ["pending", "confirmed", "rejected", "cancelled"], "example": "confirmed" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "rejected", "cancelled"],
+            "example": "confirmed"
+          },
           "created_at": { "type": "string", "format": "date-time" }
         }
       }
@@ -126,8 +190,15 @@
                   "name": { "type": "string", "example": "Kasun Bandara" },
                   "email": { "type": "string", "example": "kasun@icbt.edu.lk" },
                   "password": { "type": "string", "example": "password123" },
-                  "role": { "type": "string", "enum": ["student", "staff"], "default": "student" },
-                  "student_staff_id": { "type": "string", "example": "ICBT-ST-2024-99" },
+                  "role": {
+                    "type": "string",
+                    "enum": ["student", "staff"],
+                    "default": "student"
+                  },
+                  "student_staff_id": {
+                    "type": "string",
+                    "example": "ICBT-ST-2024-99"
+                  },
                   "phone": { "type": "string", "example": "+94 77 123 4567" }
                 }
               }
@@ -135,8 +206,12 @@
           }
         },
         "responses": {
-          "201": { "description": "Account created successfully with JWT token" },
-          "400": { "description": "Missing required fields or email already exists" }
+          "201": {
+            "description": "Account created successfully with JWT token"
+          },
+          "400": {
+            "description": "Missing required fields or email already exists"
+          }
         }
       }
     },
@@ -152,7 +227,10 @@
                 "type": "object",
                 "required": ["email", "password"],
                 "properties": {
-                  "email": { "type": "string", "example": "nimal.student@icbt.edu.lk" },
+                  "email": {
+                    "type": "string",
+                    "example": "nimal.student@icbt.edu.lk"
+                  },
                   "password": { "type": "string", "example": "student123" }
                 }
               }
@@ -214,11 +292,24 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["license_number", "vehicle_model", "vehicle_plate"],
+                "required": [
+                  "license_number",
+                  "vehicle_model",
+                  "vehicle_plate"
+                ],
                 "properties": {
-                  "license_number": { "type": "string", "example": "B-9876543-LK" },
-                  "vehicle_model": { "type": "string", "example": "Toyota Aqua" },
-                  "vehicle_plate": { "type": "string", "example": "WP-CBH-4521" },
+                  "license_number": {
+                    "type": "string",
+                    "example": "B-9876543-LK"
+                  },
+                  "vehicle_model": {
+                    "type": "string",
+                    "example": "Toyota Aqua"
+                  },
+                  "vehicle_plate": {
+                    "type": "string",
+                    "example": "WP-CBH-4521"
+                  },
                   "seats": { "type": "integer", "example": 4 },
                   "fuel_type": { "type": "string", "example": "Hybrid" },
                   "license_doc_url": { "type": "string" },
@@ -239,9 +330,21 @@
         "summary": "Search available campus carpool rides",
         "parameters": [
           { "name": "origin", "in": "query", "schema": { "type": "string" } },
-          { "name": "destination", "in": "query", "schema": { "type": "string" } },
-          { "name": "date", "in": "query", "schema": { "type": "string", "format": "date" } },
-          { "name": "oddEven", "in": "query", "schema": { "type": "string", "enum": ["ODD", "EVEN"] } },
+          {
+            "name": "destination",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "oddEven",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["ODD", "EVEN"] }
+          },
           { "name": "maxPrice", "in": "query", "schema": { "type": "number" } }
         ],
         "responses": {
@@ -258,12 +361,28 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["origin", "departure_date", "departure_time", "total_seats"],
+                "required": [
+                  "origin",
+                  "departure_date",
+                  "departure_time",
+                  "total_seats"
+                ],
                 "properties": {
                   "origin": { "type": "string", "example": "Gampaha Town" },
-                  "destination": { "type": "string", "example": "ICBT Colombo Campus" },
-                  "route_waypoints": { "type": "array", "items": { "type": "string" }, "example": ["Miriswatta", "Kiribathgoda"] },
-                  "departure_date": { "type": "string", "format": "date", "example": "2026-08-16" },
+                  "destination": {
+                    "type": "string",
+                    "example": "ICBT Colombo Campus"
+                  },
+                  "route_waypoints": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "example": ["Miriswatta", "Kiribathgoda"]
+                  },
+                  "departure_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-08-16"
+                  },
                   "departure_time": { "type": "string", "example": "07:15" },
                   "total_seats": { "type": "integer", "example": 4 },
                   "price_per_seat": { "type": "number", "example": 350 },
@@ -284,15 +403,28 @@
         "tags": ["Safety & SOS"],
         "summary": "Broadcast real-time emergency SOS to campus security & connected commuters",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "location": { "type": "string", "example": "Kiribathgoda Junction" },
-                  "message": { "type": "string", "example": "Vehicle breakdown, urgent assist." }
+                  "location": {
+                    "type": "string",
+                    "example": "Kiribathgoda Junction"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Vehicle breakdown, urgent assist."
+                  }
                 }
               }
             }
@@ -318,7 +450,10 @@
                 "properties": {
                   "ride_id": { "type": "integer", "example": 1 },
                   "seats_booked": { "type": "integer", "example": 1 },
-                  "pickup_location": { "type": "string", "example": "Kiribathgoda Junction" }
+                  "pickup_location": {
+                    "type": "string",
+                    "example": "Kiribathgoda Junction"
+                  }
                 }
               }
             }
@@ -355,8 +490,16 @@
                 "properties": {
                   "ride_id": { "type": "integer", "example": 1 },
                   "reviewee_id": { "type": "integer", "example": 2 },
-                  "rating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 },
-                  "comment": { "type": "string", "example": "Smooth, punctual ride to ICBT!" }
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 5
+                  },
+                  "comment": {
+                    "type": "string",
+                    "example": "Smooth, punctual ride to ICBT!"
+                  }
                 }
               }
             }
@@ -481,11 +624,26 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["current_password", "new_password", "confirm_password"],
+                "required": [
+                  "current_password",
+                  "new_password",
+                  "confirm_password"
+                ],
                 "properties": {
-                  "current_password": { "type": "string", "format": "password" },
-                  "new_password": { "type": "string", "format": "password", "minLength": 8 },
-                  "confirm_password": { "type": "string", "format": "password", "minLength": 8 }
+                  "current_password": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                  },
+                  "confirm_password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                  }
                 }
               }
             }
@@ -523,8 +681,16 @@
                 "properties": {
                   "name": { "type": "string" },
                   "email": { "type": "string", "format": "email" },
-                  "password": { "type": "string", "format": "password", "minLength": 8 },
-                  "role": { "type": "string", "enum": ["student", "staff"], "default": "staff" },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["student", "staff"],
+                    "default": "staff"
+                  },
                   "student_staff_id": { "type": "string" },
                   "phone": { "type": "string" }
                 }
@@ -545,7 +711,12 @@
         "summary": "Promote an existing campus user to administrator",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
         ],
         "requestBody": {
           "required": true,
