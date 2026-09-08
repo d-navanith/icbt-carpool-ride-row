@@ -1,0 +1,28 @@
+app.get("*", (req, res) => {
+  const indexFile = path.join(
+    publicDir,
+    "index.html",
+  );
+
+  res.sendFile(
+    indexFile,
+    (error) => {
+      if (error) {
+        if (
+          process.env.NODE_ENV !== "test"
+        ) {
+          console.error(
+            "SPA fallback error:",
+            error,
+          );
+        }
+
+        return res
+          .status(500)
+          .send(
+            "Frontend application unavailable.",
+          );
+      }
+    },
+  );
+});

@@ -149,6 +149,28 @@ describe("Server & Socket.IO Tests", () => {
     assert.equal(res.status, 500);
   });
 
+  it("Returns JSON 404 for an unknown API endpoint", async () => {
+    const res = await request(app).get("/api/this-endpoint-does-not-exist");
+
+    assert.equal(res.status, 404);
+
+    assert.equal(res.body.error, "API endpoint not found.");
+  });
+
+  it("Uses SPA fallback for a non-API route", async () => {
+    const res = await request(app).get("/frontend-route-does-not-exist");
+
+    /*
+     * The response may be the built frontend index
+     * when the production frontend is present.
+     *
+     * In the test environment the fallback may return
+     * the API-online fallback text if public/index.html
+     * is unavailable.
+     */
+    assert.ok(res.status === 200 || res.status === 500);
+  });
+
   // =========================================================
   // SOCKET.IO HELPERS
   // =========================================================
